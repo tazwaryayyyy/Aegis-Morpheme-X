@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "AegisMorpheme-X Protocol – Real-time AI Governance Dashboard",
-  "author": "AMX Protocol Contributors",
+  "author": "tazwar ahnaf",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
