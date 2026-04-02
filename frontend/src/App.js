@@ -116,7 +116,7 @@ export default function App() {
 
       {/* ── Footer ─────────────────────────────────────────────── */}
       <footer className="app-footer">
-        <span>AegisMorpheme-X Protocol</span> · MIT License · Powered by{' '}
+        <span>AMX Protocol</span> · MIT License · Powered by{' '}
         <span>Hedera HCS/HTS</span> · LangGraph · TinyML ·{' '}
         <a href="https://hashscan.io/testnet" target="_blank" rel="noopener noreferrer"
            style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>

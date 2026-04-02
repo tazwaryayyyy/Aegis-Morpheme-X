@@ -3,7 +3,6 @@
 > **"AI decisions must be provable, enforceable, and economically accountable — or they don't execute."**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Hedera](https://img.shields.io/badge/Hedera-Testnet-6B3FA0)](https://hedera.com)
 [![Built with LangGraph](https://img.shields.io/badge/LangGraph-Agent_Mesh-green)](https://langchain-ai.github.io/langgraph/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688)](https://fastapi.tiangolo.com)
 
