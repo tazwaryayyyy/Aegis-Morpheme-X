@@ -139,27 +139,6 @@ Dashboard runs at: `http://localhost:3000`
 
 ---
 
-## 🤖 TinyML Edge Model
-
-### Model Architecture
-- **Framework**: TensorFlow Lite (TFLite) for edge deployment
-- **Input**: 16kHz cough audio → MFCC spectrogram
-- **Processing**: 5-layer CNN with real-time inference
-- **Output**: Risk score (0.0-1.0) + confidence intervals
-
-### Model Details
-- **File**: `frontend/public/model.tflite` (1.2MB, optimized for mobile)
-- **Calibration**: ICBHI-2017 respiratory sound dataset
-- **Performance**: <50ms inference on edge devices
-- **Accuracy**: 89% validation on held-out test set
-
-### Integration
-- **Browser**: TensorFlow.js for client-side inference
-- **Backend**: Python wrapper for server-side validation
-- **Real-time**: Audio streaming + immediate risk assessment
-
----
-
 ## 🚀 Advanced Features
 
 - **One-Click Scenario Execution**: Pre-configured scenarios with smooth animations
@@ -264,6 +243,7 @@ MIT License — See [LICENSE](LICENSE)
 
 ## Acknowledgments
 
+- Created by [tazwar ahnaf](https://github.com/tazwaryayyyy)
 - Hedera Developer Relations
 - LangChain / LangGraph team
 - ICBHI 2017 Respiratory Sound Dataset (TinyML calibration)
