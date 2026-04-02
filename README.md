@@ -241,9 +241,16 @@ MIT License — See [LICENSE](LICENSE)
 
 ---
 
+## 👤 Author
+
+**Tazwar Ahnaf**  
+[GitHub](https://github.com/tazwaryayyyy) • [LinkedIn](https://linkedin.com/in/tazwar-ahnaf)  
+Creator of Aegis-Morpheme-X – a verifiable governance protocol for autonomous AI.
+
+---
+
 ## Acknowledgments
 
-- Created by [tazwar ahnaf](https://github.com/tazwaryayyyy)
 - Hedera Developer Relations
 - LangChain / LangGraph team
 - ICBHI 2017 Respiratory Sound Dataset (TinyML calibration)
