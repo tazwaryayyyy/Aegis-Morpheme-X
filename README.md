@@ -244,7 +244,7 @@ MIT License — See [LICENSE](LICENSE)
 ## 👤 Author
 
 **Tazwar Ahnaf**  
-[GitHub](https://github.com/tazwaryayyyy) • [LinkedIn](https://linkedin.com/in/tazwar-ahnaf)  
+[GitHub](https://github.com/tazwaryayyyy) • [X](https://x.com/TazwarEnan)  
 Creator of Aegis-Morpheme-X – a verifiable governance protocol for autonomous AI.
 
 ---
