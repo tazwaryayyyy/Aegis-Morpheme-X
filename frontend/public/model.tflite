@@ -1,0 +1,3 @@
+# This is a placeholder for the TinyML model
+# In production, this would be a real TensorFlow Lite model
+# For demo purposes, we simulate the model output in the backend
