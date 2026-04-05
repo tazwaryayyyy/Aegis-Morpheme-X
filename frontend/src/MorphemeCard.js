@@ -58,6 +58,7 @@ const MorphemeCard = ({ morpheme, isNew }) => {
         {morpheme ? (
           <div className="gap-stack">
             <div className="dense-row">
+              <span className="dense-label">TX_HASH</span>
               <span className="dense-val text-cyan" style={{ fontSize: 10 }}>
                 {(morpheme?.hedera_tx_id || '0.0.0@0.0').slice(0, 20)}...
               </span>
@@ -67,8 +68,15 @@ const MorphemeCard = ({ morpheme, isNew }) => {
               <span className="dense-val">{new Date(morpheme.timestamp).toLocaleTimeString()}</span>
             </div>
             <div className="dense-row">
+              <span className="dense-label">RISK_SNAP</span>
               <span className="dense-val text-cyan">
                 {morpheme?.data_snapshot?.risk_score?.toFixed(3) || '0.000'}
+              </span>
+            </div>
+            <div className="dense-row">
+              <span className="dense-label">TRIAGE</span>
+              <span className="dense-val" style={{ color: 'var(--orange)' }}>
+                {morpheme?.data_snapshot?.triage_decision || 'NULL'}
               </span>
             </div>
           </div>
