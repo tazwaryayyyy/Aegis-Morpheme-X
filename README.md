@@ -54,6 +54,14 @@ Edge (TinyML) → Agent Mesh (LangGraph) → Hedera (HCS/HTS) → Dashboard (Rea
 
 ---
 
+## Institutional UI Physics & Aesthetics
+AMX drops the cliché “hacker green” for a polished, highly-tactile institutional grade framework targeting seamless command-center executions:
+* **Tactile Interactions**: Fully integrated `Lenis` physics-based momentum scrolling + automated GSAP hooks creating physical gravity around elements `<button className="magnetic-btn">`.
+* **State-Targeting Cursor Overlay**: A custom geometric reticle (`data-cursor`) dynamically sniffs the environment hierarchy natively parsing Red (Critical/Dhaka), Orange (Vector/Nairobi), Acid (Nominal/Singapore), and general Cyan bounds.
+* **Semantic Topology Constraints**: Stripped heavy visual rendering for minimal geo-spatial SVG `<g>` particle emission sweeps (`linear-gradient`) built directly into React components.
+
+---
+
 ## Project Structure
 
 ```
@@ -79,15 +87,12 @@ amx-protocol/
 ├── frontend/
 │   ├── public/index.html
 │   └── src/
-│       ├── App.js            # Root app + scenario controls
-│       ├── Dashboard.js      # Real-time dashboard
-│       ├── MorphemeCard.js   # Morpheme-X viewer with lock
-│       ├── websocket.js      # WS hook with auto-reconnect
-│       ├── index.js
-│       └── index.css         # Premium dark glassmorphism CSS
+│       ├── App.js            # Root app + GSAP Context Sniffing
+│       ├── Dashboard.js      # Real-time WebSockets Dashboard
+│       ├── ScenarioSwitcher.js# Semantic Testing Buttons
+│       ├── OneHealthMap.js   # Radial Sweeping SVG Array
+│       └── index.css         # Institutional Acid/Cyan Aesthetic CSS
 ├── docs/
-│   └── demo_script.md        # 3-minute presentation script
-├── .env.example
 ├── README.md
 └── LICENSE
 ```
@@ -104,8 +109,8 @@ amx-protocol/
 ### 1. Clone & Configure
 
 ```bash
-git clone https://github.com/your-org/amx-protocol.git
-cd amx-protocol
+git clone https://github.com/tazwaryayyyy/Aegis-Morpheme-X.git
+cd Aegis-Morpheme-X
 cp .env.example .env
 # Edit .env with your Hedera testnet credentials
 ```
@@ -141,12 +146,11 @@ Dashboard runs at: `http://localhost:3000`
 
 ## 🚀 Advanced Features
 
-- **One-Click Scenario Execution**: Pre-configured scenarios with smooth animations
-- **Dynamic City Switching**: Real-time switching between Dhaka, Singapore, and Nairobi
-- **Professional Demo Reports**: Export comprehensive PDF reports with HashScan verification
-- **Automated Retraining**: Visual progress tracking with performance metrics
-- **Geographic Intelligence**: Interactive One Health map with risk visualization
-- **Bulletproof Error Resilience**: Comprehensive error handling and fallbacks
+- **Institutional-Grade UI Physics**: GSAP-powered magnetic fields, custom hardware-accelerated cursor masking, and Lenis buttery momentum layout integration.
+- **Dynamic Contextual Reticle**: State-sniffing circular reticle tracking execution bounds (Red/Critical, Orange/Vector, Acid/Nominal).
+- **One-Click Scenario Execution**: Pre-configured testing states via tactile flowish terminal sweeps (`IMP_CRIT`, `IMP_MED`, `IMP_LOW`).
+- **Geographic Intelligence**: Interactive One Health map with minimal radial emission pulses replacing hard geometries.
+- **Professional Demo Reports**: Export HashScan-stamped HTML audits mimicking raw secure terminal pipelines.
 
 ---
 
@@ -163,7 +167,7 @@ Dashboard runs at: `http://localhost:3000`
 | `GET`  | `/api/retraining/log` | Agent retraining history |
 | `GET`  | `/api/registry` | HOL agent directory |
 | `GET`  | `/api/city/current` | Get current city configuration |
-| `POST` | `/api/city/switch` | Switch to new city (Dhaka, Singapore, Nairobi) |
+| `POST` | `/api/city/switch` | Switch to new city (Dhaka, Nairobi, Singapore) |
 | `GET`  | `/api/city/available` | List all available cities |
 | `WS`   | `/ws` | Real-time event stream |
 
@@ -187,10 +191,10 @@ Dashboard runs at: `http://localhost:3000`
 ## 🎮 Demo Usage
 
 1. Open `http://localhost:3000` in your browser
-2. Use **Scenario Switcher** for one-click demo execution
-3. Switch cities with **Dynamic City Switcher** 
-4. Export professional reports with **Report Exporter**
-5. View real-time agent decisions and Morpheme-X creation
+2. Hover across **Scenario Switcher** nodes to see context-sniffing GSAP mapping.
+3. Switch dynamic nodes with **Geographic Intelligence** (DHAKA -> NAIROBI -> SINGAPORE). 
+4. Read Real-time system streams parsed natively into terminal bounds.
+5. Hit `EXECUTE REPORT` for verifiable terminal data pipeline dumps tracking agent validation constraints.
 
 ---
 
@@ -230,8 +234,8 @@ To switch from simulation to live Hedera:
 | Innovation | 30% | Morpheme-X, Meta-Sentinel, agent-to-agent commerce, adaptive insurance |
 | Technical Depth | 25% | TinyML + LangGraph + Hedera HCS/HTS + WebSockets + statistical modeling |
 | Impact | 20% | Shadow AI, rogue autonomy, humanitarian funding gap — all addressed |
-| UI/UX | 15% | Premium glassmorphism dashboard, real-time events, lock animation |
-| Presentation | 10% | 3-min script with Trust Proof moment and live Hedera explorer |
+| UI/UX | 15% | Premium institutional glassmorphism, dynamic context cursor physics, terminal mapping |
+| Presentation | 10% | Verified HashScan export logic mapped perfectly over 3-min demonstration |
 
 ---
 
@@ -246,12 +250,3 @@ MIT License — See [LICENSE](LICENSE)
 **Tazwar Ahnaf**  
 [GitHub](https://github.com/tazwaryayyyy) • [X](https://x.com/TazwarEnan)  
 Creator of Aegis-Morpheme-X – a verifiable governance protocol for autonomous AI.
-
----
-
-## Acknowledgments
-
-- Hedera Developer Relations
-- LangChain / LangGraph team
-- ICBHI 2017 Respiratory Sound Dataset (TinyML calibration)
-- WHO Global Initiative on AI for Health (GI-AI4H)
