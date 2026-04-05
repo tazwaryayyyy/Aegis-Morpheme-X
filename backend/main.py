@@ -24,6 +24,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
+load_dotenv()  # ── Load environment variables immediately ──────────────────
+
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware

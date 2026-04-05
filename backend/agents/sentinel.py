@@ -29,15 +29,9 @@ class StatisticalSentinel:
     def check(self, agent: str, value: float) -> dict:
         """
         Check a new agent output value for anomaly.
-        Returns a dict with keys: anomaly (bool), mean, std, zscore, action.
+        Calculates statistics based on EXISTING history before adding new value.
         """
         hist = self.history.get(agent, [])
-        hist.append(value)
-
-        # Trim to window size
-        if len(hist) > self.window_size:
-            hist.pop(0)
-        self.history[agent] = hist
 
         result = {
             "agent": agent,
@@ -50,9 +44,12 @@ class StatisticalSentinel:
             "slash_percent": 0,
         }
 
-        # Need at least 3 samples
+        # Need at least 3 samples to have a meaningful baseline
         if len(hist) < 3:
             logger.debug(f"[Sentinel] {agent}: too few samples ({len(hist)}), skipping check")
+            # Still record the value to build history
+            hist.append(value)
+            self.history[agent] = hist
             return result
 
         mean = sum(hist) / len(hist)
@@ -62,13 +59,13 @@ class StatisticalSentinel:
         result["mean"] = round(mean, 4)
         result["std"] = round(std, 4)
 
-        if std == 0:
-            return result
-
-        zscore = abs(value - mean) / std
+        # Use epsilon to avoid division by zero if std is 0 (perfectly stable baseline)
+        zscore = abs(value - mean) / (std + 1e-6)
         result["zscore"] = round(zscore, 4)
 
-        if zscore > 2.0:
+        # If std was 0, any significant deviation is an anomaly. 
+        # Otherwise, check if zscore exceeds threshold.
+        if (std == 0 and abs(value - mean) > 0.01) or zscore > 2.0:
             result["anomaly"] = True
             result["action"] = "block"
             result["slash_percent"] = 10
@@ -77,6 +74,12 @@ class StatisticalSentinel:
                 f"mean={mean:.4f}, std={std:.4f}, zscore={zscore:.4f}"
             )
             self.anomaly_log.append(result.copy())
+
+        # Update history AFTER check to establish baseline for NEXT run
+        hist.append(value)
+        if len(hist) > self.window_size:
+            hist.pop(0)
+        self.history[agent] = hist
 
         return result
 

@@ -9,6 +9,8 @@ import random
 import time
 
 import httpx
+from dotenv import load_dotenv
+load_dotenv()  # ── Ensure key is available before reading getenv ───────────
 
 logger = logging.getLogger("amx.one_health.weather")
 
