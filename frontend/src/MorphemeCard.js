@@ -6,7 +6,7 @@ const MorphemeCard = ({ morpheme, isNew }) => {
   // Matrix-style decode effect around the text
   useEffect(() => {
     if (isNew && morpheme) {
-      const target = morpheme.morpheme_id;
+      const target = morpheme?.morpheme_id || '00000000';
       let iter = 0;
       const interval = setInterval(() => {
         setDisplayText(target.split('').map((char, index) => {
@@ -18,7 +18,7 @@ const MorphemeCard = ({ morpheme, isNew }) => {
       }, 30);
       return () => clearInterval(interval);
     } else if (morpheme) {
-      setDisplayText(morpheme.morpheme_id);
+      setDisplayText(morpheme?.morpheme_id || '00000000');
     }
   }, [morpheme, isNew]);
 
@@ -36,7 +36,9 @@ const MorphemeCard = ({ morpheme, isNew }) => {
           <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>
             [M] SEALED_MORPHEME
           </div>
-          <div style={{ fontSize: 9, color: 'rgba(0,229,255,0.4)', letterSpacing: 1 }}>{morpheme.morpheme_id.slice(-8)}</div>
+          <div style={{ fontSize: 9, color: 'rgba(0,229,255,0.4)', letterSpacing: 1 }}>
+            {(morpheme?.morpheme_id || '00000000').slice(-8)}
+          </div>
         </div>
       ) : (
         <div style={{ 
@@ -56,16 +58,18 @@ const MorphemeCard = ({ morpheme, isNew }) => {
         {morpheme ? (
           <div className="gap-stack">
             <div className="dense-row">
-              <span className="dense-label">TX_HASH</span>
-              <span className="dense-val text-cyan" style={{ fontSize: 10 }}>{morpheme.hedera_tx_id.slice(0, 20)}...</span>
+              <span className="dense-val text-cyan" style={{ fontSize: 10 }}>
+                {(morpheme?.hedera_tx_id || '0.0.0@0.0').slice(0, 20)}...
+              </span>
             </div>
             <div className="dense-row">
               <span className="dense-label">TIMESTAMP</span>
               <span className="dense-val">{new Date(morpheme.timestamp).toLocaleTimeString()}</span>
             </div>
             <div className="dense-row">
-              <span className="dense-label">RISK_SNAP</span>
-              <span className="dense-val text-cyan">{morpheme.data_snapshot.risk_score?.toFixed(3)}</span>
+              <span className="dense-val text-cyan">
+                {morpheme?.data_snapshot?.risk_score?.toFixed(3) || '0.000'}
+              </span>
             </div>
           </div>
         ) : (

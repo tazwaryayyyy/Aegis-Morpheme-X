@@ -1,26 +1,31 @@
 import { render, screen } from '@testing-library/react';
 import MorphemeCard from '../MorphemeCard';
 
-test('displays transaction link correctly', () => {
+test('displays transaction details correctly', () => {
   const mockMorpheme = {
+    morpheme_id: '8888777766665555',
     hedera_tx_id: '0.0.12345@1234567890.123456789',
-    explorer_url: 'https://hashscan.io/testnet/transaction/0.0.12345@1234567890.123456789',
-    confirmed: true,
-    risk_score: 0.85,
-    diagnosis: 'High risk'
+    timestamp: '2026-04-05T12:00:00Z',
+    data_snapshot: {
+      risk_score: 0.85123,
+      triage_decision: 'URGENT'
+    }
   };
   
-  render(<MorphemeCard morpheme={mockMorpheme} isNew={true} />);
+  render(<MorphemeCard morpheme={mockMorpheme} isNew={false} />);
   
-  // Check that the TX ID is displayed
-  expect(screen.getByText(/0.0.12345@1234567890.123456789/)).toBeInTheDocument();
+  // Check shortened TX ID (first 20 chars)
+  expect(screen.getByText(/0.0.12345@1234567890/)).toBeInTheDocument();
   
-  // Check that the HashScan link is present and correct
-  const link = screen.getByRole('link', { name: /hashscan/i });
-  expect(link).toHaveAttribute('href', mockMorpheme.explorer_url);
+  // Check risk score formatting
+  expect(screen.getByText(/0.851/)).toBeInTheDocument();
+
+  // Check morpheme ID slice
+  expect(screen.getByText(/66665555/)).toBeInTheDocument();
 });
 
 test('displays placeholder when no morpheme is provided', () => {
   render(<MorphemeCard morpheme={null} isNew={false} />);
-  expect(screen.getByText(/No Morpheme-X yet/i)).toBeInTheDocument();
+  // Matches the text: > UNSEALED — NO MORPHEME COMMITTED
+  expect(screen.getByText(/UNSEALED — NO MORPHEME COMMITTED/i)).toBeInTheDocument();
 });
