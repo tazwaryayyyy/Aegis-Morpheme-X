@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import MorphemeCard from '../MorphemeCard';
 
 test('displays transaction details correctly', () => {
@@ -14,8 +15,9 @@ test('displays transaction details correctly', () => {
   
   render(<MorphemeCard morpheme={mockMorpheme} isNew={false} />);
   
-  // Check shortened TX ID (first 20 chars)
-  expect(screen.getByText(/0.0.12345@1234567890/)).toBeInTheDocument();
+  // Use getAllByText because it appears in both the summary and raw JSON section
+  const txElements = screen.getAllByText(/0.0.12345@1234567890/);
+  expect(txElements.length).toBeGreaterThanOrEqual(1);
   
   // Check risk score formatting
   expect(screen.getByText(/0.851/)).toBeInTheDocument();
