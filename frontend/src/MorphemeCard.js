@@ -1,121 +1,103 @@
-/**
- * AMX Protocol – Morpheme-X Card Component
- * Displays the Executable Morpheme-X with lock animation and Hedera explorer link.
- */
-
 import React, { useState, useEffect } from 'react';
 
-function syntaxHighlight(json) {
-  if (!json) return '';
-  const str = JSON.stringify(json, null, 2);
-  return str.replace(
-    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
-    (match) => {
-      let cls = 'json-num';
-      if (/^"/.test(match)) {
-        cls = /:$/.test(match) ? 'json-key' : 'json-str';
-      } else if (/true|false/.test(match)) {
-        cls = 'json-bool';
-      } else if (/null/.test(match)) {
-        cls = 'json-null';
-      }
-      return `<span class="${cls}">${match}</span>`;
-    }
-  );
-}
+const MorphemeCard = ({ morpheme, isNew }) => {
+  const [displayText, setDisplayText] = useState('');
 
-export default function MorphemeCard({ morpheme, isNew }) {
-  const [locking, setLocking] = useState(false);
-
+  // Matrix-style decode effect around the text
   useEffect(() => {
-    if (isNew && morpheme?.confirmed && !morpheme?.fallback) {
-      setLocking(true);
-      const t = setTimeout(() => setLocking(false), 600);
-      return () => clearTimeout(t);
+    if (isNew && morpheme) {
+      const target = morpheme.morpheme_id;
+      let iter = 0;
+      const interval = setInterval(() => {
+        setDisplayText(target.split('').map((char, index) => {
+          if (index < iter) return char;
+          return String.fromCharCode(33 + Math.random() * 94);
+        }).join(''));
+        iter += 1/3;
+        if (iter >= target.length) clearInterval(interval);
+      }, 30);
+      return () => clearInterval(interval);
+    } else if (morpheme) {
+      setDisplayText(morpheme.morpheme_id);
     }
-  }, [isNew, morpheme]);
-
-  const confirmed = morpheme?.confirmed;
-  const isFallback = morpheme?.fallback;
-  const isLocking = confirmed && !isFallback;
-  const txId = morpheme?.hedera_tx_id;
-  const explorerUrl = morpheme?.explorer_url;
-
-  // Build display copy (without internal keys)
-  const displayMorpheme = morpheme
-    ? {
-        intent_hash:       morpheme.intent_hash,
-        model_snapshot:    morpheme.model_snapshot_hash,
-        context_fp:        morpheme.context_fingerprint,
-        risk_score:        morpheme.risk_score,
-        triage:            morpheme.triage,
-        diagnosis:         morpheme.diagnosis,
-        outbreak_risk:     morpheme.outbreak_risk,
-        payout_threshold:  morpheme.payout_threshold,
-        insurance_trigger: morpheme.insurance_trigger,
-        payout_amount:     morpheme.payout_amount,
-        trigger:           morpheme.trigger,
-        hedera_tx_id:      morpheme.hedera_tx_id,
-        consensus_ts:      morpheme.consensus_timestamp,
-      }
-    : null;
+  }, [morpheme, isNew]);
 
   return (
-    <div className={`card morpheme-card ${confirmed ? 'confirmed' : ''}`}>
-      {/* Header */}
-      <div className="morpheme-header">
-        <div className="card-title">
-          <div className="card-title-icon" style={{ background: 'rgba(0,255,163,0.1)' }}>🧬</div>
-          Executable Morpheme-X
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {/* Dynamic Header */}
+      {morpheme ? (
+        <div style={{ 
+          background: 'rgba(0,229,255,0.08)',
+          borderBottom: '1px solid rgba(0,229,255,0.2)',
+          padding: '12px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          transition: 'background 0.3s'
+        }}>
+          <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--cyan)' }}>
+            [M] SEALED_MORPHEME
+          </div>
+          <div style={{ fontSize: 9, color: 'rgba(0,229,255,0.4)', letterSpacing: 1 }}>{morpheme.morpheme_id.slice(-8)}</div>
         </div>
-        <div className={`morpheme-lock ${confirmed ? (isFallback ? 'fallback' : 'locked') : 'unlocked'}`}>
-          <span className={`lock-icon ${isLocking ? 'locking' : ''}`}>
-            {confirmed ? (isFallback ? '⚠️' : '🔒') : '🔓'}
-          </span>
-          <span style={{ fontSize: 12 }}>
-            {confirmed ? (isFallback ? '⚠️ FALLBACK MODE' : 'ON-CHAIN VERIFIED') : 'AWAITING SUBMISSION'}
-          </span>
+      ) : (
+        <div style={{ 
+          background: 'transparent',
+          borderBottom: '1px solid var(--border)',
+          padding: '12px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+        }}>
+          <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>
+            [M] MORPHEME_TARGET
+          </div>
         </div>
+      )}
+
+      {/* Content Area */}
+      <div style={{ padding: '24px 20px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        {morpheme ? (
+          <div className="gap-stack">
+            <div className="dense-row">
+              <span className="dense-label">TX_HASH</span>
+              <span className="dense-val text-cyan" style={{ fontSize: 10 }}>{morpheme.hedera_tx_id.slice(0, 20)}...</span>
+            </div>
+            <div className="dense-row">
+              <span className="dense-label">TIMESTAMP</span>
+              <span className="dense-val">{new Date(morpheme.timestamp).toLocaleTimeString()}</span>
+            </div>
+            <div className="dense-row">
+              <span className="dense-label">RISK_SNAP</span>
+              <span className="dense-val text-cyan">{morpheme.data_snapshot.risk_score?.toFixed(3)}</span>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <div style={{ 
+              fontSize: 10, fontFamily: 'var(--font-mono)', 
+              color: 'rgba(255,255,255,0.3)',
+              textAlign: 'center',
+              letterSpacing: '0.12em'
+            }}>
+              {'>'} UNSEALED — NO MORPHEME COMMITTED
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Trust proof */}
-      {confirmed && (
-        <div className="trust-pill mb-8" style={{ marginBottom: 12 }}>
-          ✅ Immutable · Auditable · Cannot Be Altered
-        </div>
-      )}
-
-      {/* TX ID row */}
-      {txId && (
-        <div className="tx-id-row">
-          <span className="tx-id-label">TX ID</span>
-          <span className="tx-id-value">{txId}</span>
-          {explorerUrl && (
-            <a
-              href={explorerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="tx-explorer-link"
-              title="View on HashScan"
-            >
-              HashScan ↗
-            </a>
-          )}
-        </div>
-      )}
-
-      {/* JSON viewer */}
-      {displayMorpheme ? (
-        <div
-          className="morpheme-json"
-          dangerouslySetInnerHTML={{ __html: syntaxHighlight(displayMorpheme) }}
-        />
-      ) : (
-        <div className="morpheme-json" style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '32px 0' }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>⬡</div>
-          <div>No Morpheme-X yet. Run a simulation to create one.</div>
+      {/* JSON Dropdown if active */}
+      {morpheme && (
+        <div className="morpheme-json" style={{ borderTop: 'none', borderBottom: 'none', borderLeft: 'none', borderRight: 'none' }}>
+           <div style={{ color: 'var(--cyan)', marginBottom: 8 }}>{'{'}</div>
+           <div style={{ paddingLeft: 16 }}>
+             <div><span className="json-key">"morpheme_id":</span> <span className="json-str">"{displayText}"</span>,</div>
+             <div><span className="json-key">"hedera_tx_id":</span> <span className="json-str">"{morpheme.hedera_tx_id}"</span>,</div>
+             <div>
+               <span className="json-key">"agents":</span> <span className="json-str">"{morpheme.data_snapshot.triage_decision ? 'triage, ' : ''}{morpheme.data_snapshot.diagnosis_decision ? 'diagnosis' : ''}"</span>
+             </div>
+           </div>
+           <div style={{ color: 'var(--cyan)', marginTop: 8 }}>{'}'}</div>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default MorphemeCard;
