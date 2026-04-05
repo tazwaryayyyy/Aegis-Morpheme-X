@@ -20,10 +20,12 @@ test('displays transaction details correctly', () => {
   expect(txElements.length).toBeGreaterThanOrEqual(1);
   
   // Check risk score formatting
-  expect(screen.getByText(/0.851/)).toBeInTheDocument();
+  const riskElements = screen.getAllByText(/0.851/);
+  expect(riskElements.length).toBeGreaterThanOrEqual(1);
 
   // Check morpheme ID slice
-  expect(screen.getByText(/66665555/)).toBeInTheDocument();
+  const mIdElements = screen.getAllByText(/66665555/);
+  expect(mIdElements.length).toBeGreaterThanOrEqual(1);
 });
 
 test('displays placeholder when no morpheme is provided', () => {
