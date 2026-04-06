@@ -29,15 +29,31 @@ def test_websocket_analyze_broadcast():
         response = client.post("/api/analyze", json={"risk": 0.85, "scenario": "normal"})
         assert response.status_code == 200
         
-        # Receive broadcasted events over WebSocket: 'risk_received', 'agent_decision' x4, ...
-        # Check for at least 'risk_received' and 'pipeline_complete'
+        # The suite sends:
+        # - risk_received
+        # - agent_decision (triage)
+        # - agent_decision (diagnosis)
+        # - outbreak_risk_update (epidemiology)
+        # - payout_triggered/declined (finance)
+        # - morpheme_created (morpheme)
+        # - sentinel_check/block (sentinel)
+        # - agent_slash (if blocked)
+        # - pipeline_complete
         events = []
-        # Receive up to 10 events (risk_received, triage, diagnosis, etc.)
-        for _ in range(10):
+        for _ in range(15): # Allow up to 15 to be safe
             try:
-                events.append(websocket.receive_json())
+                msg = websocket.receive_json()
+                events.append(msg)
+                if msg["type"] == "pipeline_complete":
+                    break
             except Exception:
                 break
         
+        # Log events on failure for easier debugging
+        if not any(e["type"] == "pipeline_complete" for e in events):
+            print(f"DEBUG: Received events: {[e['type'] for e in events]}")
+
         assert any(e["type"] == "risk_received" for e in events)
         assert any(e["type"] == "pipeline_complete" for e in events)
+
+

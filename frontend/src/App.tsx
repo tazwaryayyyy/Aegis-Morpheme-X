@@ -3,12 +3,13 @@ import './index.css';
 import Dashboard from './Dashboard';
 import ScenarioSwitcher from './ScenarioSwitcher';
 import RetrainingNotification from './RetrainingNotification';
+import ComponentShowcase from './ComponentShowcase';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 const CustomCursor = () => {
-  const dotRef = useRef(null);
-  const ringRef = useRef(null);
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!window.gsap) return;
@@ -19,12 +20,13 @@ const CustomCursor = () => {
     const xRing = gsap.quickTo(ringRef.current, 'left', { duration: 0.15, ease: 'power3' });
     const yRing = gsap.quickTo(ringRef.current, 'top', { duration: 0.15, ease: 'power3' });
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       xDot(e.clientX); yDot(e.clientY);
       xRing(e.clientX); yRing(e.clientY);
 
       // Magnetic hover logic
-      const mag = e.target.closest('.magnetic-btn');
+      const target = e.target as HTMLElement;
+      const mag = target.closest('.magnetic-btn') as HTMLElement;
       if (mag) {
         const rect = mag.getBoundingClientRect();
         const xOffset = (e.clientX - rect.left - rect.width / 2) * 0.15; // Pull strength
@@ -33,17 +35,18 @@ const CustomCursor = () => {
       }
     };
 
-    const handleMouseOut = (e) => {
+    const handleMouseOut = (e: MouseEvent) => {
       // Release magnetic pull
-      const mag = e.target.closest('.magnetic-btn');
+      const target = e.target as HTMLElement;
+      const mag = target.closest('.magnetic-btn') as HTMLElement;
       if (mag) {
         gsap.to(mag, { x: 0, y: 0, duration: 0.7, ease: 'elastic.out(1, 0.3)', overwrite: 'auto' });
       }
     };
 
-    const handleMouseOverToggle = (e) => {
-      const target = e.target.closest('button') || e.target.closest('a') || e.target.closest('.magnetic-btn') || e.target.closest('circle');
-      if (target) {
+    const handleMouseOverToggle = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('button, a, .magnetic-btn, circle') as HTMLElement;
+      if (target && dotRef.current && ringRef.current) {
         dotRef.current.classList.add('hovered');
         
         let cClass = 'hover-cyan';
@@ -55,9 +58,9 @@ const CustomCursor = () => {
         ringRef.current.dataset.activeHover = cClass;
       }
     };
-    const handleMouseOutToggle = (e) => {
-      const target = e.target.closest('button') || e.target.closest('a') || e.target.closest('.magnetic-btn') || e.target.closest('circle');
-      if (target) {
+    const handleMouseOutToggle = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('button, a, .magnetic-btn, circle') as HTMLElement;
+      if (target && dotRef.current && ringRef.current) {
         dotRef.current.classList.remove('hovered');
         const cClass = ringRef.current.dataset.activeHover;
         if (cClass) {
@@ -91,19 +94,20 @@ const CustomCursor = () => {
 };
 
 export default function App() {
+  const [showcase, setShowcase] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [wsOnline, setWsOnline] = useState(false);
-  const [events, setEvents]     = useState([]);
+  const [events, setEvents]     = useState<any[]>([]);
 
-  const heroTitleRef = useRef(null);
-  const leftLineRef = useRef(null);
-  const rightLineRef = useRef(null);
-  const amxRef = useRef(null);
-  const subtitleRef = useRef(null);
-  const scenarioRef = useRef(null);
+  const heroTitleRef = useRef<HTMLHeadingElement>(null);
+  const leftLineRef = useRef<HTMLDivElement>(null);
+  const rightLineRef = useRef<HTMLDivElement>(null);
+  const amxRef = useRef<HTMLDivElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const scenarioRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let id;
+    let id: NodeJS.Timeout;
     const check = async () => {
       try {
         const r = await fetch(`${API_BASE}/api/status`);
@@ -122,26 +126,43 @@ export default function App() {
     const mm = gsap.matchMedia();
     mm.add('(prefers-reduced-motion: no-preference)', () => {
       const tl = gsap.timeline({ delay: 0.2 });
-      const amxChars = new window.SplitType(amxRef.current, { types: 'chars' });
-      
-      gsap.set(amxChars.chars, { y: 8, opacity: 0 });
-      gsap.set(heroTitleRef.current, { clipPath: 'inset(100% 0 0 0)' });
-      gsap.set(subtitleRef.current, { opacity: 0, y: 12 });
-      
-      const buttons = scenarioRef.current ? Array.from(scenarioRef.current.querySelectorAll('.scenario-btn')) : [];
-      gsap.set(buttons, { opacity: 0, y: 16 });
+      if (amxRef.current && heroTitleRef.current && subtitleRef.current) {
+        const amxChars = new window.SplitType(amxRef.current, { types: 'chars' });
+        
+        gsap.set(amxChars.chars, { y: 8, opacity: 0 });
+        gsap.set(heroTitleRef.current, { clipPath: 'inset(100% 0 0 0)' });
+        gsap.set(subtitleRef.current, { opacity: 0, y: 12 });
+        
+        const buttons = scenarioRef.current ? Array.from(scenarioRef.current.querySelectorAll('.scenario-btn')) : [];
+        gsap.set(buttons, { opacity: 0, y: 16 });
 
-      tl.to(leftLineRef.current, { width: '40vw', duration: 0.7, ease: 'power3.out' }, 0)
-        .to(rightLineRef.current, { width: '40vw', duration: 0.7, ease: 'power3.out' }, 0)
-        .to(amxChars.chars, { y: 0, opacity: 1, duration: 0.4, stagger: 0.06, ease: 'power2.out' }, 0.5)
-        .to(heroTitleRef.current, { clipPath: 'inset(0% 0 0 0)', duration: 0.8, ease: 'power4.out' }, 0.9)
-        .to(subtitleRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 1.4)
-        .to(buttons, { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: 'power3.out' }, 1.7)
-        .to([leftLineRef.current, rightLineRef.current], { opacity: 0, duration: 0.5 }, 2.0);
+        tl.to(leftLineRef.current, { width: '40vw', duration: 0.7, ease: 'power3.out' }, 0)
+          .to(rightLineRef.current, { width: '40vw', duration: 0.7, ease: 'power3.out' }, 0)
+          .to(amxChars.chars, { y: 0, opacity: 1, duration: 0.4, stagger: 0.06, ease: 'power2.out' }, 0.5)
+          .to(heroTitleRef.current, { clipPath: 'inset(0% 0 0 0)', duration: 0.8, ease: 'power4.out' }, 0.9)
+          .to(subtitleRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 1.4)
+          .to(buttons, { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: 'power3.out' }, 1.7)
+          .to([leftLineRef.current, rightLineRef.current], { opacity: 0, duration: 0.5 }, 2.0);
+      }
     });
   }, []);
 
   const handleScenarioExecute = useCallback(() => {}, []);
+
+  if (showcase) {
+    return (
+      <>
+        <CustomCursor />
+        <button 
+          onClick={() => setShowcase(false)}
+          className="fixed top-6 right-6 z-[1000] bg-white text-black px-4 py-2 font-mono text-xs hover:bg-neutral-200 transition-colors"
+        >
+          BACK TO DASHBOARD
+        </button>
+        <ComponentShowcase />
+      </>
+    );
+  }
 
   return (
     <>
@@ -151,7 +172,11 @@ export default function App() {
         <header className="app-header">
           <div className="header-inner">
             <div className="logo">
-              <div className="logo-lockup magnetic-btn" style={{ cursor: 'pointer' }}>
+              <div 
+                className="logo-lockup magnetic-btn" 
+                style={{ cursor: 'pointer' }}
+                onClick={() => setShowcase(true)}
+              >
                 <span className="logo-prefix">ΛMX</span>
                 <span className="logo-separator">/</span>
                 <span className="logo-name">AEGIS MORPHEME</span>
@@ -203,7 +228,6 @@ export default function App() {
           <RetrainingNotification events={events} />
         </main>
 
-        {/* X Credit Link */}
         <a 
           href="https://x.com/TazwarEnan" 
           target="_blank" 
@@ -215,8 +239,8 @@ export default function App() {
             color: 'rgba(255,255,255,0.15)', textDecoration: 'none',
             transition: 'color 0.2s', padding: 8
           }}
-          onMouseEnter={(e) => e.target.style.color = 'var(--cyan)'}
-          onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.15)'}
+          onMouseEnter={(e: any) => e.target.style.color = 'var(--cyan)'}
+          onMouseLeave={(e: any) => e.target.style.color = 'rgba(255,255,255,0.15)'}
         >
           // x.com/TazwarEnan
         </a>

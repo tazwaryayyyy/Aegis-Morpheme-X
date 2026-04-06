@@ -12,6 +12,13 @@ def test_full_agent_pipeline_normal():
     assert result["morpheme"]["hedera_tx_id"] is not None
 
 def test_full_agent_pipeline_anomaly():
+    # Seed the sentinel baseline first (needs 3+ samples)
+    from agents.graph import sentinel
+    sentinel.reset_all()
+    for _ in range(5):
+        sentinel.check("finance", 50.0) # Normal payout
+
+        
     # Anomaly case: 0.9 (High risk) + force_anomaly
     # Sentinel should block it because finance_node will be overridden with 9999.0
     result = run_pipeline(risk=0.9, scenario="anomaly", anomaly_override="force_anomaly")
@@ -19,3 +26,4 @@ def test_full_agent_pipeline_anomaly():
     assert result["blocked"] is True
     assert any(event["type"] == "sentinel_block" for event in result["events"])
     assert any(event["type"] == "agent_slash" for event in result["events"])
+

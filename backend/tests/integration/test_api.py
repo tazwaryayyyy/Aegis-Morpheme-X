@@ -20,6 +20,13 @@ def test_analyze_endpoint_normal():
     assert state.get("blocked") is False
 
 def test_analyze_endpoint_anomaly():
+    # Seed the sentinel baseline first (needs 3+ samples)
+    from agents.graph import sentinel
+    sentinel.reset_all()
+    for _ in range(5):
+        sentinel.check("finance", 50.0) # Normal payout
+
+        
     # Anomaly case: risk=0.9 (High risk) + anomaly scenario
     # In main.py, /api/analyze handles 'anomaly' scenario by setting anomaly_override='force_anomaly'
     response = client.post("/api/analyze", json={"risk": 0.9, "scenario": "anomaly"})
@@ -28,3 +35,4 @@ def test_analyze_endpoint_anomaly():
     
     state = response.json()["state"]
     assert state["blocked"] is True
+

@@ -16,10 +16,15 @@ import time
 logger = logging.getLogger("amx.hedera.hcs")
 
 # Load from .env (optional – falls back to simulation)
-HCS_TOPIC_ID = os.getenv("HCS_TOPIC_ID", "0.0.4982301")
-HCS_SENTINEL_TOPIC_ID = os.getenv("HCS_SENTINEL_TOPIC_ID", "0.0.4982302")
-HEDERA_NETWORK = os.getenv("HEDERA_NETWORK", "testnet")
-SIMULATE_HCS = os.getenv("SIMULATE_HCS", "true").lower() == "true"
+def get_hcs_config():
+    """Get dynamic configuration from environment variables."""
+    return {
+        "topic_id": os.getenv("HCS_TOPIC_ID", "0.0.4982301"),
+        "sentinel_topic_id": os.getenv("HCS_SENTINEL_TOPIC_ID", "0.0.4982302"),
+        "network": os.getenv("HEDERA_NETWORK", "testnet"),
+        "simulate": os.getenv("SIMULATE_HCS", "true").lower() == "true",
+    }
+
 
 # Sequence counter for realistic transaction IDs
 _seq_counter = random.randint(100000, 999999)
@@ -52,7 +57,9 @@ def submit_morpheme(morpheme: dict) -> dict:
     message_bytes = json.dumps(morpheme, sort_keys=True).encode()
     message_hash = hashlib.sha256(message_bytes).hexdigest()[:16]
 
-    if SIMULATE_HCS:
+    config = get_hcs_config()
+    
+    if config["simulate"]:
         # Simulate network latency (≈0.3s instead of real 3s for demo speed)
         time.sleep(0.3)
 
@@ -60,11 +67,11 @@ def submit_morpheme(morpheme: dict) -> dict:
         consensus_ts = _generate_consensus_timestamp()
 
         morpheme["hedera_tx_id"] = tx_id
-        morpheme["hedera_topic_id"] = HCS_TOPIC_ID
+        morpheme["hedera_topic_id"] = config["topic_id"]
         morpheme["message_hash"] = message_hash
         morpheme["consensus_timestamp"] = consensus_ts
         morpheme["explorer_url"] = (
-            f"https://hashscan.io/{HEDERA_NETWORK}/transaction/{tx_id}"
+            f"https://hashscan.io/{config['network']}/transaction/{tx_id}"
         )
         morpheme["confirmed"] = True
 
@@ -80,14 +87,14 @@ def submit_morpheme(morpheme: dict) -> dict:
             # Fallback to simulation mode immediately
             fallback_tx_id = f"FALLBACK_{_generate_tx_id()}"
             morpheme["hedera_tx_id"] = fallback_tx_id
-            morpheme["hedera_topic_id"] = HCS_TOPIC_ID
+            morpheme["hedera_topic_id"] = config["topic_id"]
             morpheme["message_hash"] = message_hash
             morpheme["consensus_timestamp"] = _generate_consensus_timestamp()
             morpheme["confirmed"] = False
             morpheme["fallback"] = True
             morpheme["error"] = f"SDK Import Error: {str(e)}"
             morpheme["explorer_url"] = (
-                f"https://hashscan.io/{HEDERA_NETWORK}/transaction/{fallback_tx_id.replace('FALLBACK_', '')}"
+                f"https://hashscan.io/{config['network']}/transaction/{fallback_tx_id.replace('FALLBACK_', '')}"
             )
             return morpheme
             
@@ -98,7 +105,7 @@ def submit_morpheme(morpheme: dict) -> dict:
             client.setOperator(operator_id, operator_key)
 
             from hedera import TopicId  # type: ignore
-            topic_id = TopicId.fromString(HCS_TOPIC_ID)
+            topic_id = TopicId.fromString(config["topic_id"])
 
             tx = (
                 TopicMessageSubmitTransaction()
@@ -108,25 +115,25 @@ def submit_morpheme(morpheme: dict) -> dict:
             )
             receipt = tx.getReceipt(client)
             morpheme["hedera_tx_id"] = str(receipt.transactionId)
-            morpheme["hedera_topic_id"] = HCS_TOPIC_ID
+            morpheme["hedera_topic_id"] = config["topic_id"]
             morpheme["message_hash"] = message_hash
             morpheme["confirmed"] = True
             morpheme["explorer_url"] = (
-                f"https://hashscan.io/{HEDERA_NETWORK}/transaction/{morpheme['hedera_tx_id']}"
+                f"https://hashscan.io/{config['network']}/transaction/{morpheme['hedera_tx_id']}"
             )
             logger.info(f"[HCS] Morpheme submitted (live): tx={morpheme['hedera_tx_id']}")
         except Exception as e:
             logger.error(f"[HCS] Real submission failed, falling back to simulation: {e}")
             fallback_tx_id = f"FALLBACK_{_generate_tx_id()}"
             morpheme["hedera_tx_id"] = fallback_tx_id
-            morpheme["hedera_topic_id"] = HCS_TOPIC_ID
+            morpheme["hedera_topic_id"] = config["topic_id"]
             morpheme["message_hash"] = message_hash
             morpheme["consensus_timestamp"] = _generate_consensus_timestamp()
             morpheme["confirmed"] = False
             morpheme["fallback"] = True
             morpheme["error"] = str(e)
             morpheme["explorer_url"] = (
-                f"https://hashscan.io/{HEDERA_NETWORK}/transaction/{fallback_tx_id.replace('FALLBACK_', '')}"
+                f"https://hashscan.io/{config['network']}/transaction/{fallback_tx_id.replace('FALLBACK_', '')}"
             )
             logger.warning(f"[HCS] Using fallback transaction: {fallback_tx_id}")
 

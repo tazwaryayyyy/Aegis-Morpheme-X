@@ -91,3 +91,10 @@ class StatisticalSentinel:
         if agent in self.history:
             self.history[agent] = []
             logger.info(f"[Sentinel] Reset history for agent: {agent}")
+
+    def reset_all(self):
+        """Reset all agent histories (used for tests)."""
+        for agent in self.history:
+            self.history[agent] = []
+        logger.info("[Sentinel] Reset all agent histories.")
+
