@@ -1,13 +1,14 @@
 'use client'
 
 import React from "react"
-import { SplineScene } from "@/components/ui/splite"
-import { Card } from "@/components/ui/card"
-import { Spotlight } from "@/components/ui/spotlight"
-import { SpotlightHover } from "@/components/ui/spotlight-hover"
-import { ShaderAnimation } from "@/components/ui/shader-animation"
-import { ButtonColorful } from "@/components/ui/button-colorful"
-import { Button } from "@/components/ui/button"
+import { SplineScene } from "./components/ui/splite"
+import { Card } from "./components/ui/card"
+import { Spotlight } from "./components/ui/spotlight"
+import { SpotlightHover } from "./components/ui/spotlight-hover"
+import { ShaderAnimation } from "./components/ui/shader-animation"
+import { ButtonColorful } from "./components/ui/button-colorful"
+import { Button } from "./components/ui/button"
+
 
 export default function ComponentShowcase() {
   return (

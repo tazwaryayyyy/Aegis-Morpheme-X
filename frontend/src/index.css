@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* AegisMorpheme-X Protocol — Cyan / Acid / Orange Aesthetic */
 
 
@@ -41,8 +42,8 @@
 }
 
 /* ── Custom Cursor ──────────────────────────────────────────────────────── */
-body { cursor: none !important; }
-a, button, input { cursor: none !important; }
+body { cursor: auto !important; }
+a, button, input { cursor: pointer !important; }
 
 .cursor-dot,
 .cursor-ring {

@@ -185,10 +185,12 @@ export default function App() {
             <div className="header-status">
               <span className="network-badge magnetic-btn">HEDERA TESTNET</span>
               <div className="status-badge magnetic-btn">
-                <span style={{ color: wsOnline ? 'var(--cyan)' : 'rgba(255,255,255,0.2)' }}>
+                <span style={{ color: wsOnline ? '#00FF88' : 'rgba(255,255,255,0.2)' }}>
                   {wsOnline ? '[●]' : '[○]'}
                 </span>
-                {wsOnline ? 'ONLINE' : 'OFFLINE'}
+                <span style={{ color: wsOnline ? '#00FF88' : 'inherit' }}>
+                  {wsOnline ? 'ONLINE' : 'OFFLINE'}
+                </span>
               </div>
             </div>
           </div>

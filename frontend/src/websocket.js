@@ -14,6 +14,12 @@ export function useAMXWebSocket(onEvent) {
   const reconnectCount = useRef(0);
   const reconnectTimer = useRef(null);
   const [connected, setConnected] = useState(false);
+  const onEventRef = useRef(onEvent);
+
+  // Update onEvent ref when it changes
+  useEffect(() => {
+    onEventRef.current = onEvent;
+  }, [onEvent]);
 
   const connect = useCallback(() => {
     try {
@@ -38,7 +44,7 @@ export function useAMXWebSocket(onEvent) {
         try {
           const data = JSON.parse(event.data);
           if (data.type !== 'pong') {
-            onEvent(data);
+            onEventRef.current(data);
           }
         } catch (e) {
           console.warn('[AMX WS] Parse error:', e);
@@ -63,7 +69,7 @@ export function useAMXWebSocket(onEvent) {
       console.error('[AMX WS] Failed to connect:', e);
       setConnected(false);
     }
-  }, [onEvent]);
+  }, []); // Empty dependency array to prevent infinite reconnection
 
   useEffect(() => {
     connect();
@@ -78,7 +84,7 @@ export function useAMXWebSocket(onEvent) {
         wsRef.current.close();
       }
     };
-  }, [connect]);
+  }, []); // Empty dependency array to prevent re-running on connect change
 
   const send = useCallback((payload) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
