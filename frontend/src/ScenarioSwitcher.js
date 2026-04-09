@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
   const [active, setActive] = useState(null);
 
@@ -10,7 +12,14 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
       desc: 'Simulate severe outbreak risk. Forces agent overrides and parametric slashing.',
       tag: 'IMP_CRIT',
       btnClass: 'btn-dhaka',
-      tagColor: 'rgba(255,42,42,0.6)' // Red
+      tagColor: 'rgba(255,42,42,0.6)',
+      // Map to real API call: high risk + anomaly to trigger sentinel
+      apiCall: () =>
+        fetch(`${API_BASE}/api/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ risk: 0.92, scenario: 'anomaly' }),
+        }),
     },
     {
       id: 'nairobi_vector',
@@ -18,7 +27,14 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
       desc: 'Simulate vector mutation data requiring genomic API validation.',
       tag: 'IMP_MED',
       btnClass: 'btn-nairobi',
-      tagColor: 'rgba(255,98,0,0.6)' // Orange
+      tagColor: 'rgba(255,98,0,0.6)',
+      // High risk normal — triggers epidemiology + genomic hire
+      apiCall: () =>
+        fetch(`${API_BASE}/api/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ risk: 0.78, scenario: 'normal' }),
+        }),
     },
     {
       id: 'singapore_norm',
@@ -26,24 +42,28 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
       desc: 'Simulate standard baseline conditions. Agents coordinate smoothly.',
       tag: 'IMP_LOW',
       btnClass: 'btn-sgp',
-      tagColor: 'rgba(200,255,0,0.6)' // Green / Acid
-    }
+      tagColor: 'rgba(200,255,0,0.6)',
+      // Low-medium risk normal
+      apiCall: () =>
+        fetch(`${API_BASE}/api/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ risk: 0.35, scenario: 'normal' }),
+        }),
+    },
   ];
 
   const handleSelect = async (scenario) => {
     if (disabled) return;
     setActive(scenario.id);
-    
     try {
-      const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-      await fetch(`${API_BASE}/api/scenario`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario: scenario.id })
-      });
+      await scenario.apiCall();
       if (onScenarioExecute) onScenarioExecute(scenario.id);
     } catch (err) {
-      console.error('Failed to trigger scenario', err);
+      console.error('[ScenarioSwitcher] Failed to trigger scenario:', err);
+    } finally {
+      // Keep button highlighted briefly, then reset
+      setTimeout(() => setActive(null), 3000);
     }
   };
 
@@ -54,6 +74,7 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
         return (
           <button
             key={s.id}
+            id={`scenario-btn-${s.id}`}
             className={`scenario-btn magnetic-btn ${s.btnClass} ${isActive ? 'active' : ''}`}
             onClick={() => handleSelect(s)}
             disabled={disabled}

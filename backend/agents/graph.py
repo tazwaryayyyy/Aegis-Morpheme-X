@@ -5,6 +5,7 @@ Compatible with LangGraph 1.x.
 """
 
 import hashlib
+import threading
 import json
 import logging
 import time
@@ -296,20 +297,28 @@ def build_graph():
 amx_graph = build_graph()
 
 
+# Lock to serialise pipeline invocations — amx_graph.invoke mutates the shared
+# sentinel's rolling window; concurrent calls without a lock corrupt the window.
+_pipeline_lock = threading.Lock()
+
+
 def run_pipeline(
-    risk: float, 
-    scenario: str = "normal", 
+    risk: float,
+    scenario: str = "normal",
     anomaly_override: Optional[str] = None,
     city: str = "Dhaka"
 ) -> dict[str, Any]:
     """Run the full AMX agent pipeline and return final state."""
+    # Clamp risk to valid range before passing into the pipeline
+    risk = max(0.0, min(1.0, float(risk)))
+
     try:
-        initial = make_initial_state(risk, scenario, anomaly_override, city)
-        final = amx_graph.invoke(initial)
+        with _pipeline_lock:
+            initial = make_initial_state(risk, scenario, anomaly_override, city)
+            final = amx_graph.invoke(initial)
         return final
     except Exception as e:
         logger.error(f"[Pipeline] Pipeline execution failed: {e}")
-        # Return safe fallback state
         return {
             "risk": risk,
             "scenario": scenario,

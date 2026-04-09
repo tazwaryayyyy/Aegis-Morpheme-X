@@ -3,33 +3,37 @@ import '@testing-library/jest-dom';
 import MorphemeCard from '../MorphemeCard';
 
 test('displays transaction details correctly', () => {
+  // morpheme dict matches what graph.py actually produces:
+  // intent_hash, hedera_tx_id, timestamp (unix seconds), risk_score, triage, diagnosis
   const mockMorpheme = {
-    morpheme_id: '8888777766665555',
+    intent_hash: '8888777766665555aabbccdd11223344',
     hedera_tx_id: '0.0.12345@1234567890.123456789',
-    timestamp: '2026-04-05T12:00:00Z',
-    data_snapshot: {
-      risk_score: 0.85123,
-      triage_decision: 'URGENT'
-    }
+    // Unix seconds timestamp so new Date(ts * 1000) works
+    timestamp: 1744000000,
+    risk_score: 0.85123,
+    triage: 'URGENT',
+    diagnosis: 'High likelihood of severe respiratory infection',
+    confirmed: true,
+    explorer_url: 'https://hashscan.io/testnet/transaction/0.0.12345@1234567890.123456789',
   };
-  
+
   render(<MorphemeCard morpheme={mockMorpheme} isNew={false} />);
-  
-  // Use getAllByText because it appears in both the summary and raw JSON section
+
+  // TX hash truncated to 20 chars + "..."
   const txElements = screen.getAllByText(/0.0.12345@1234567890/);
   expect(txElements.length).toBeGreaterThanOrEqual(1);
-  
-  // Check risk score formatting
-  const riskElements = screen.getAllByText(/0.851/);
+
+  // Risk score shown as 3 dp — 0.851
+  const riskElements = screen.getAllByText(/0\.851/);
   expect(riskElements.length).toBeGreaterThanOrEqual(1);
 
-  // Check morpheme ID slice
-  const mIdElements = screen.getAllByText(/66665555/);
-  expect(mIdElements.length).toBeGreaterThanOrEqual(1);
+  // Last 8 chars of intent_hash shown in header
+  const hashSliceElements = screen.getAllByText(/11223344/);
+  expect(hashSliceElements.length).toBeGreaterThanOrEqual(1);
 });
 
 test('displays placeholder when no morpheme is provided', () => {
   render(<MorphemeCard morpheme={null} isNew={false} />);
-  // Matches the text: > UNSEALED — NO MORPHEME COMMITTED
+  // Matches: > UNSEALED — NO MORPHEME COMMITTED
   expect(screen.getByText(/UNSEALED — NO MORPHEME COMMITTED/i)).toBeInTheDocument();
 });

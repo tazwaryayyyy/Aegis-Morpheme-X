@@ -82,9 +82,12 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
   useEffect(() => { refreshStakes(); }, [refreshStakes]);
 
   const handleEvent = useCallback((ev) => {
-    const updated = [{ ...ev, _ts: Date.now() }, ...events].slice(0, MAX_EVENTS);
-    setEvents(updated);
-    if (setExternalEvents) setExternalEvents(updated);
+    // Use functional setState to avoid stale closure on events
+    setEvents(prev => {
+      const updated = [{ ...ev, _ts: Date.now() }, ...prev].slice(0, MAX_EVENTS);
+      if (setExternalEvents) setExternalEvents(updated);
+      return updated;
+    });
     setTimeout(scrollFeed, 50);
 
     switch (ev.type) {
@@ -129,7 +132,8 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
       default:
         break;
     }
-  }, [scrollFeed, refreshStakes, events, setExternalEvents]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollFeed, refreshStakes, setExternalEvents]);
 
   useAMXWebSocket(handleEvent);
 

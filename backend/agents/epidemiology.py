@@ -85,10 +85,9 @@ def epidemiology_agent(state: dict[str, Any]) -> dict[str, Any]:
 
     return {
         **state,
-        "outbreak_risk": outbreak_risk,
+        "outbreak_risk": min(1.0, max(0.0, outbreak_risk)),  # clamp 0-1
         "poverty_index": poverty_index,
         "weather_risk": weather_risk,
         "livestock_risk": livestock_risk,
         "genomic_hire": genomic_hire,
-        "city_config": city_config["config"],
     }

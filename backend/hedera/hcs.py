@@ -12,6 +12,7 @@ import logging
 import os
 import random
 import time
+import uuid
 
 logger = logging.getLogger("amx.hedera.hcs")
 
@@ -63,7 +64,10 @@ def submit_morpheme(morpheme: dict) -> dict:
         # Simulate network latency (≈0.3s instead of real 3s for demo speed)
         time.sleep(0.3)
 
-        tx_id = _generate_tx_id()
+        sim_uuid = str(uuid.uuid4()).replace("-", "")[:24]
+        tx_id = f"SIMULATED_{sim_uuid}"
+        # Build a realistic explorer URL using a realistic-looking tx ID
+        display_tx = _generate_tx_id()
         consensus_ts = _generate_consensus_timestamp()
 
         morpheme["hedera_tx_id"] = tx_id
@@ -71,7 +75,7 @@ def submit_morpheme(morpheme: dict) -> dict:
         morpheme["message_hash"] = message_hash
         morpheme["consensus_timestamp"] = consensus_ts
         morpheme["explorer_url"] = (
-            f"https://hashscan.io/{config['network']}/transaction/{tx_id}"
+            f"https://hashscan.io/{config['network']}/transaction/{display_tx}"
         )
         morpheme["confirmed"] = True
 

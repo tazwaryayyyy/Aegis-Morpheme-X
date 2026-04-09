@@ -28,7 +28,7 @@ from dotenv import load_dotenv
 load_dotenv()  # ── Load environment variables immediately ──────────────────
 
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
