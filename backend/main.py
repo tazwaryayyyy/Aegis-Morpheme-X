@@ -13,6 +13,15 @@ Endpoints:
   WS   /ws                   – Real-time event stream
 """
 
+from one_health.weather import set_current_city, get_current_city
+from retraining_scheduler import scheduler, auto_schedule_from_slashes
+from hedera.registry import get_full_registry
+from hedera.hts import get_agent_stakes, get_retraining_log, trigger_hcvr_payout
+from agents.graph import run_pipeline, sentinel
+from pydantic import BaseModel, Field
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+import uvicorn
 import asyncio
 import json
 import logging
@@ -27,21 +36,10 @@ from typing import Optional
 from dotenv import load_dotenv
 load_dotenv()  # ── Load environment variables immediately ──────────────────
 
-import uvicorn
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 
 # ── Path fix so backend/ sub-packages resolve correctly ──────────────────────
 sys.path.insert(0, str(Path(__file__).parent))
 
-from agents.graph import run_pipeline, sentinel
-from agents.sentinel import StatisticalSentinel
-from hedera.hts import get_agent_stakes, get_retraining_log, trigger_hcvr_payout
-from hedera.registry import get_full_registry
-from retraining_scheduler import scheduler, auto_schedule_from_slashes
-from one_health.weather import set_current_city, get_current_city
 
 logging.basicConfig(
     level=logging.INFO,
@@ -50,6 +48,8 @@ logging.basicConfig(
 logger = logging.getLogger("amx.main")
 
 # Broadcast retraining updates to WebSocket clients
+
+
 async def broadcast_retraining_update(session_id: str, session_data: dict):
     """Broadcast retraining progress to all WebSocket clients."""
     await manager.broadcast({
@@ -59,6 +59,7 @@ async def broadcast_retraining_update(session_id: str, session_data: dict):
         "timestamp": int(time.time())
     })
 
+
 class ConnectionManager:
     def __init__(self):
         self.active: list[WebSocket] = []
@@ -66,12 +67,12 @@ class ConnectionManager:
     async def connect(self, ws: WebSocket):
         await ws.accept()
         self.active.append(ws)
-        logger.info(f"[WS] Client connected. Total={len(self.active)}")
+        logger.info("[WS] Client connected. Total=%d", len(self.active))
 
     def disconnect(self, ws: WebSocket):
         if ws in self.active:
             self.active.remove(ws)
-        logger.info(f"[WS] Client disconnected. Total={len(self.active)}")
+        logger.info("[WS] Client disconnected. Total=%d", len(self.active))
 
     async def broadcast(self, payload: dict):
         message = json.dumps(payload)
@@ -80,7 +81,7 @@ class ConnectionManager:
         for ws in self.active.copy():
             try:
                 await ws.send_text(message)
-            except Exception:
+            except (RuntimeError, OSError):
                 dead.append(ws)
         # Safely remove dead connections
         for ws in dead:
@@ -96,7 +97,7 @@ manager = ConnectionManager()
 # ---------------------------------------------------------------------------
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # pylint: disable=unused-argument,redefined-outer-name
     logger.info("AMX Protocol backend starting…")
     # Start auto-scheduling retraining from existing slashes
     auto_schedule_from_slashes()
@@ -146,9 +147,11 @@ class RiskResponse(BaseModel):
 
 
 class AnalyzeRequest(BaseModel):
-    risk: float = Field(..., ge=0.0, le=1.0, description="Cough risk score from TinyML")
+    risk: float = Field(..., ge=0.0, le=1.0,
+                        description="Cough risk score from TinyML")
     scenario: str = Field("normal", description="Scenario: normal | anomaly")
-    patient_id: Optional[str] = Field(None, description="Optional patient identifier")
+    patient_id: Optional[str] = Field(
+        None, description="Optional patient identifier")
 
 
 class AnalyzeResponse(BaseModel):
@@ -178,7 +181,7 @@ async def switch_city(request: CityRequest):
     """Switch to a new city and return its configuration."""
     try:
         city_info = set_current_city(request.city)
-        
+
         # Broadcast city change to all WebSocket clients
         await manager.broadcast({
             "type": "city_changed",
@@ -187,37 +190,36 @@ async def switch_city(request: CityRequest):
             "weather_risk": city_info["weather_risk"],
             "timestamp": int(time.time())
         })
-        
-        logger.info(f"[API] City switched to: {request.city}")
-        
+
+        logger.info("[API] City switched to: %s", request.city)
+
         return CityResponse(
             city=city_info["city"],
             config=city_info["config"],
             weather_risk=city_info["weather_risk"],
             message=f"Successfully switched to {request.city}"
         )
-        
-    except Exception as e:
-        logger.error(f"[API] City switch failed: {e}")
-        raise HTTPException(status_code=400, detail=f"Failed to switch city: {str(e)}")
+
+    except ValueError as e:
+        logger.error("[API] City switch failed: %s", str(e))
+        raise HTTPException(
+            status_code=400, detail=f"Failed to switch city: {str(e)}") from e
 
 
 @app.get("/api/city/available")
 async def get_available_cities():
     """Get list of available cities with their configurations."""
-    from one_health.weather import set_current_city
-    
     cities = ["Dhaka", "Singapore", "Nairobi"]
     city_configs = {}
-    
+
     for city in cities:
         try:
             city_info = set_current_city(city)
             city_configs[city] = city_info["config"]
-        except Exception as e:
-            logger.error(f"Failed to get config for {city}: {e}")
+        except ValueError as e:
+            logger.error("Failed to get config for %s: %s", city, str(e))
             city_configs[city] = {"error": str(e)}
-    
+
     return {"cities": city_configs}
 
 
@@ -239,7 +241,8 @@ async def analyze(req: AnalyzeRequest):
     Run the full AMX pipeline with the given risk score.
     Broadcasts events over WebSocket in real time.
     """
-    logger.info(f"[API] /analyze – risk={req.risk:.3f}, scenario={req.scenario}")
+    logger.info("[API] /analyze – risk=%.3f, scenario=%s",
+                req.risk, req.scenario)
 
     # Broadcast risk_received event immediately
     await manager.broadcast({
@@ -251,7 +254,7 @@ async def analyze(req: AnalyzeRequest):
 
     # Run pipeline (blocking, but fast for demo)
     anomaly_override = "force_anomaly" if req.scenario == "anomaly" else None
-    
+
     # Get current city for context-aware analysis
     current_city = get_current_city()
 
@@ -306,7 +309,8 @@ async def simulate_cough(scenario: str = "normal"):
     elif scenario == "medium_risk":
         risk = round(random.uniform(0.45, 0.74), 3)
     else:
-        risk = round(random.uniform(0.75, 0.96), 3)  # High risk for dramatic demo
+        # High risk for dramatic demo
+        risk = round(random.uniform(0.75, 0.96), 3)
 
     req = AnalyzeRequest(risk=risk, scenario=scenario)
     return await analyze(req)
@@ -368,16 +372,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 if msg.get("type") == "ping":
                     await websocket.send_text(json.dumps({"type": "pong", "timestamp": int(time.time())}))
             except json.JSONDecodeError:
-                logger.warning(f"[WS] Invalid JSON received: {data}")
+                logger.warning("[WS] Invalid JSON received: %s", data)
                 await websocket.send_text(json.dumps({
-                    "type": "error", 
+                    "type": "error",
                     "message": "Invalid JSON format",
                     "timestamp": int(time.time())
                 }))
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-    except Exception as e:
-        logger.error(f"[WS] Error: {e}")
+    except (RuntimeError, OSError) as e:
+        logger.error("[WS] Error: %s", str(e))
         manager.disconnect(websocket)
 
 
@@ -386,5 +390,5 @@ async def websocket_endpoint(websocket: WebSocket):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))
+    port = int(os.getenv("PORT", "8000"))
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
