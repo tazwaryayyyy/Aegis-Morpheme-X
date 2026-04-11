@@ -140,6 +140,48 @@ const MorphemeCard = ({ morpheme, isNew }) => {
           <div style={{ color: 'var(--cyan)', marginTop: 8 }}>{'}'}</div>
         </div>
       )}
+
+      {/* BUGFIX: Upgrade 3 - HashScan Prominence Button */}
+      {morpheme && (
+        <div style={{ padding: '0 20px 20px' }}>
+          <button
+            className="magnetic-btn"
+            onClick={() => window.open(morpheme.explorer_url, '_blank')}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: 'rgba(170, 255, 0, 0.05)',
+              border: '1px solid var(--acid)',
+              borderRadius: '4px',
+              color: 'var(--acid)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              cursor: 'none',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(170, 255, 0, 0.12)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(170, 255, 0, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(170, 255, 0, 0.05)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <span>VERIFY ON HEDERA</span>
+            <span style={{ fontSize: '14px' }}>↗</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

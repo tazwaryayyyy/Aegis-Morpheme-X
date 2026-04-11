@@ -4,12 +4,16 @@ import AnomalyChart from './AnomalyChart';
 import CitySwitcher from './CitySwitcher';
 import ReportExporter from './ReportExporter';
 import OneHealthMap from './OneHealthMap';
+import ImpactDashboard from './ImpactDashboard';
 import { useAMXWebSocket } from './websocket';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 const MAX_EVENTS = 80;
 
 function eventMeta(ev) {
+  // BUGFIX: Guard against undefined/null event
+  if (!ev) return { ascii: '[?]', label: 'UNKNOWN', detail: 'Invalid event data', isAnomaly: false, isAcid: false };
+
   let isAnomaly = false;
   let isAcid = false;
   
@@ -19,31 +23,31 @@ function eventMeta(ev) {
 
   switch (ev.type) {
     case 'risk_received':
-      return { ascii: '[+]', label: 'RISK_RCV', detail: `SCORE: ${ev.risk?.toFixed(3)}`, isAnomaly, isAcid };
+      return { ascii: '[+]', label: 'RISK_RCV', detail: `SCORE: ${ev.risk?.toFixed(3) || '0.000'}`, isAnomaly, isAcid }; // BUGFIX: null check risk
     case 'agent_decision':
-      return { ascii: '[>]', label: `AGT_${ev.agent}`, detail: ev.reasoning || ev.decision?.slice(0, 60), isAnomaly, isAcid };
+      return { ascii: '[>]', label: `AGT_${ev.agent || 'UNK'}`, detail: ev.reasoning || ev.decision?.slice(0, 60) || '', isAnomaly, isAcid }; // BUGFIX: null check agent
     case 'agent_slash':
       return { ascii: '[!]', label: 'STAKE_SLASH', detail: ev.reasoning || `${ev.agent} stake slashed`, isAnomaly, isAcid };
     case 'morpheme_created':
-      return { ascii: '[M]', label: 'MORPH_GEN', detail: `TX: ${ev.morpheme?.hedera_tx_id?.slice(0, 30)}...`, isAnomaly, isAcid };
+      return { ascii: '[M]', label: 'MORPH_GEN', detail: `TX: ${ev.morpheme?.hedera_tx_id?.slice(0, 30) || 'PENDING'}...`, isAnomaly, isAcid }; // BUGFIX: null check morpheme
     case 'sentinel_block':
       return { ascii: '[X]', label: 'SENTINEL_BLK', detail: ev.reasoning || `Agent ${ev.agent} anomaly detected`, isAnomaly, isAcid };
     case 'sentinel_check':
       return { ascii: '[*]', label: 'SENTINEL_CHK', detail: ev.reasoning || (ev.blocked ? 'BLOCKED' : 'PASS'), isAnomaly, isAcid };
     case 'payout_triggered':
-      return { ascii: '[$]', label: 'PAYOUT_TRG', detail: `${ev.payout_amount?.toFixed(2)} HCVR`, isAnomaly, isAcid };
+      return { ascii: '[$]', label: 'PAYOUT_TRG', detail: `${ev.payout_amount?.toFixed(2) || '0.00'} HCVR`, isAnomaly, isAcid }; // BUGFIX: null check amount
     case 'payout_declined':
       return { ascii: '[-]', label: 'PAYOUT_DCL', detail: `Risk < THRESHOLD`, isAnomaly, isAcid };
     case 'hcvr_payout':
-      return { ascii: '[#]', label: 'HCVR_TX', detail: `${ev.amount} HCVR TX`, isAnomaly, isAcid };
+      return { ascii: '[#]', label: 'HCVR_TX', detail: `${ev.amount || '0'} HCVR TX`, isAnomaly, isAcid }; // BUGFIX: null check amount
     case 'outbreak_risk_update':
-      return { ascii: '[O]', label: 'OUTBREAK_UPD', detail: `Risk: ${ev.outbreak_risk?.toFixed(3)}`, isAnomaly, isAcid };
+      return { ascii: '[O]', label: 'OUTBREAK_UPD', detail: `Risk: ${ev.outbreak_risk?.toFixed(3) || '0.000'}`, isAnomaly, isAcid }; // BUGFIX: null check risk
     case 'pipeline_complete':
       return { ascii: '[V]', label: 'EXEC_DONE', detail: `Pipeline ended`, isAnomaly, isAcid };
     case 'connected':
       return { ascii: '[C]', label: 'WS_SYNC', detail: 'AMX Protocol WebSocket active', isAnomaly, isAcid };
     default:
-      return { ascii: '[~]', label: ev.type, detail: '', isAnomaly, isAcid };
+      return { ascii: '[~]', label: ev.type || 'EVENT', detail: '', isAnomaly, isAcid };
   }
 }
 
@@ -66,6 +70,12 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
   const [events, setEvents]               = useState(externalEvents || []);
   
   const feedRef = useRef(null);
+  const isMounted = useRef(true); // BUGFIX: mount tracking
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   const scrollFeed = useCallback(() => {
     if (feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight;
@@ -74,14 +84,21 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
   const refreshStakes = useCallback(async () => {
     try {
       const res  = await fetch(`${API_BASE}/api/agents/stakes`);
+      if (!res.ok) return; // BUGFIX: check response ok
       const data = await res.json();
-      setStakes(data.stakes);
-    } catch (_) {}
+      if (isMounted.current && data && data.stakes) { // BUGFIX: mount check & null check
+        setStakes(data.stakes);
+      }
+    } catch (_) {
+      console.warn('[Dashboard] Failed to refresh stakes'); // BUGFIX: logging
+    }
   }, []);
 
   useEffect(() => { refreshStakes(); }, [refreshStakes]);
 
   const handleEvent = useCallback((ev) => {
+    if (!ev || !isMounted.current) return; // BUGFIX: null & mount check
+
     // Use functional setState to avoid stale closure on events
     setEvents(prev => {
       const updated = [{ ...ev, _ts: Date.now() }, ...prev].slice(0, MAX_EVENTS);
@@ -113,11 +130,11 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
       case 'morpheme_created':
         setMorpheme(ev.morpheme);
         setMorphemeNew(true);
-        setTimeout(() => setMorphemeNew(false), 1000);
+        setTimeout(() => { if (isMounted.current) setMorphemeNew(false); }, 1000); // BUGFIX: mount check in timeout
         break;
       case 'sentinel_block':
         setSentinelAlert(true);
-        setSentinelMsg(`ANOMALY: ${ev.agent} | -10% STAKE`);
+        setSentinelMsg(`ANOMALY: ${ev.agent || 'Agent'} | -10% STAKE`);
         setSlashLog((prev) => [ev, ...prev].slice(0, 20));
         refreshStakes();
         break;
@@ -138,6 +155,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
   useAMXWebSocket(handleEvent);
 
   const fmtTime = (ts) => {
+    if (!ts) return '00:00:00.000'; // BUGFIX: time guard
     const d = new Date(ts);
     return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}.${d.getMilliseconds().toString().padStart(3, '0')}`;
   };
@@ -148,28 +166,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
     <>
       <div id="dashboard-start" style={{ scrollMarginTop: '60px' }}></div>
 
-      <div className="stats-row">
-        <div className="stat-card">
-          <div className="stat-label">Executions</div>
-          <div className="stat-value" style={{ color: 'var(--cyan)' }}>{runCount}</div>
-          <div className="stat-sub">Simulations Run</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Anomalies</div>
-          <div className="stat-value" style={{ color: slashLog.length > 0 ? 'var(--orange)' : 'var(--text-primary)' }}>{slashLog.length}</div>
-          <div className="stat-sub">Stake Slashes</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">HCS Seals</div>
-          <div className="stat-value" style={{ color: 'var(--cyan)' }}>{morpheme ? 1 : 0}</div>
-          <div className="stat-sub">Hedera Maintained</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-label">Payouts</div>
-          <div className="stat-value" style={{ color: payout ? 'var(--acid)' : 'var(--text-primary)' }}>{payout ? '1' : '0'}</div>
-          <div className="stat-sub">HCVR Disbursals</div>
-        </div>
-      </div>
+      <ImpactDashboard events={events} stakes={stakes} />
       
       <div className="dashboard-grid">
 
@@ -213,7 +210,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
                   <div key={agent} className={`dense-row ${rowClass}`}>
                     <span className="dense-label">{agent}</span>
                     <span className="dense-val" style={{ color: isActive ? (isSlashedRecent ? 'var(--orange)' : 'var(--cyan)') : 'var(--text-primary)' }}>
-                      {amount.toFixed(0)} AMX
+                      {amount?.toFixed(0) || '0'} AMX
                     </span>
                   </div>
                 );
@@ -289,7 +286,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
             </div>
             <AnomalyChart
               sentinelHistory={[]}
-              currentAnomaly={events.find(e => e.type === 'sentinel_block')}
+              currentAnomaly={events.find(e => e && e.type === 'sentinel_block')}
             />
           </div>
         </div>
@@ -310,7 +307,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
               events={events}
               cityConfig={cityConfig || {}}
               agentStakes={stakes}
-              anomalyData={events.find(e => e.type === 'sentinel_block')}
+              anomalyData={events.find(e => e && e.type === 'sentinel_block')}
             />
           </div>
         </div>

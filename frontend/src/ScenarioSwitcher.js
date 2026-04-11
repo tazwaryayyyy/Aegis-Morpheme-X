@@ -19,7 +19,7 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ risk: 0.92, scenario: 'anomaly' }),
-        }),
+        }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }), // BUGFIX: handle fetch error
     },
     {
       id: 'nairobi_vector',
@@ -34,7 +34,7 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ risk: 0.78, scenario: 'normal' }),
-        }),
+        }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }), // BUGFIX: handle fetch error
     },
     {
       id: 'singapore_norm',
@@ -49,7 +49,7 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ risk: 0.35, scenario: 'normal' }),
-        }),
+        }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }), // BUGFIX: handle fetch error
     },
   ];
 
@@ -60,7 +60,8 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
       await scenario.apiCall();
       if (onScenarioExecute) onScenarioExecute(scenario.id);
     } catch (err) {
-      console.error('[ScenarioSwitcher] Failed to trigger scenario:', err);
+      console.error('[ScenarioSwitcher] Failed to trigger scenario:', err); // BUGFIX: log errors properly
+      alert(`Simulation Error: ${err.message}`); // BUGFIX: give user feedback on failure
     } finally {
       // Keep button highlighted briefly, then reset
       setTimeout(() => setActive(null), 3000);

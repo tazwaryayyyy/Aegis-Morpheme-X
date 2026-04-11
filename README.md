@@ -3,221 +3,128 @@
 > "AI decisions must be provable, enforceable, and economically accountable — or they don't execute."
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Hedera](https://img.shields.io/badge/Hedera-HCS%2FHTS-cyan)
+![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688)
+![React](https://img.shields.io/badge/React-UI-blue)
+![LangGraph](https://img.shields.io/badge/LangGraph-Agents-orange)
 
 **Live Demo:** [aegis-morpheme-x.vercel.app](https://aegis-morpheme-x.vercel.app)  
 **Backend API:** [aegis-morpheme-x.onrender.com](https://aegis-morpheme-x.onrender.com)
 
-> The backend runs on Render's free tier and may take 30 to 60 seconds to wake up on first load. Wait for the ONLINE indicator in the dashboard to turn green before running any scenarios.
+---
+
+## 📽️ Judging Criteria Alignment
+
+| Criteria | AMX Implementation |
+|---|---|
+| **Innovation** | Provable AI decisions via "Executable Morpheme-X" units sealed on Hedera HCS. Real-time anomaly detection slashing agent stakes via HTS. |
+| **Presentation** | Institutional-grade dark dashboard with GSAP magnetic physics, real-time WebSockets, and a custom **interactive 3D Cobe globe**. |
+| **Functionality** | End-to-end pipeline: **Real TinyML (Scikit-learn)** cough analysis → **LangGraph** agent mesh → **Hedera** settlement → **HCVR** parametric payouts. |
+| **Problem Solving** | Solves the "Black Box AI" risk in critical infrastructure by ensuring every decision is verifiable, immutable, and bounded by economic penalties. |
 
 ---
 
-## What is AMX?
-
-AegisMorpheme-X is a self-governing, verifiable AI governance network for health and finance decisions. It solves three real problems that existing AI infrastructure ignores:
-
-| Crisis | Problem | AMX Solution |
-|---|---|---|
-| Shadow AI | Unvalidated models with no audit trail | Executable Morpheme-X sealed on Hedera HCS |
-| Rogue Autonomy | Agents combining tools in unauthorized sequences | Meta-Sentinel with 2-sigma anomaly detection |
-| Fiscal Space Gap | Slow, opaque humanitarian funding | Adaptive parametric insurance with automatic HTS payouts |
-
----
-
-## Core Innovations
-
-**1. Executable Morpheme-X**
-
-Every AI decision is packaged into a cryptographic JSON unit containing an intent hash, model snapshot hash, context fingerprint, risk score, and execution trigger. This unit is submitted to Hedera Consensus Service and only executes after on-chain confirmation. Sub-3-second finality.
-
-**2. Meta-Sentinel (2-sigma Anomaly Detection)**
-
-A rolling-window z-score monitor watches every agent output in real time. Any deviation beyond 2 standard deviations blocks the action, slashes 10% of the agent's AMXSTAKE token balance, and schedules automatic retraining using the failed example as a hard negative.
-
-**3. Self-Improving Economic Accountability**
-
-Agents put skin in the game. They stake AMXSTAKE tokens and lose a portion of them when they misbehave. The retraining loop means agents get better over time rather than repeating the same failures.
-
-**4. Agent-to-Agent Commerce**
-
-When the Epidemiology Agent detects elevated outbreak risk, it hires specialized agents (like a Genomic Sequence AI) from a decentralized registry via micro-HBAR payments. The system is a marketplace of verifiable intelligence, not a closed monolith.
-
-**5. Adaptive Parametric Insurance**
-
-```
-T_payout = clamp(0.5, 0.9, 0.7 - (R_outbreak × 0.3 + V_poverty × 0.1))
-```
-
-Payout thresholds shift dynamically based on real outbreak risk and poverty index data. In high-risk environments like Dhaka, a moderate cough triggers a micro-payout. In stable environments like Singapore, the bar is higher. Aid arrives faster when it's needed most.
-
----
-
-## Architecture
-
-```
-Edge (TinyML) → Agent Mesh (LangGraph) → Hedera (HCS/HTS) → Dashboard (React)
-                        ↑
-              Meta-Sentinel (Anomaly Detection)
-```
-
----
-
-## Quick Start
+## 🚀 Quick Start (Demo Mode)
 
 **Prerequisites**
 - Python 3.11+
 - Node.js 20+
-- No Hedera credentials needed to run in simulation mode
+- No Hedera credentials needed to run in simulation mode (`SIMULATE_HCS=true`)
 
-**1. Clone and configure**
-
+### 1. Clone & Configure
 ```bash
 git clone https://github.com/tazwaryayyyy/Aegis-Morpheme-X.git
 cd Aegis-Morpheme-X
 cp .env.example .env
 ```
+*Note: Ensure `SIMULATE_HCS=true` is set in `.env` to run without API keys.*
 
-Open `.env` and set:
-```
-SIMULATE_HCS=true
-OPENWEATHER_API_KEY=your_key_here
-```
-
-That's the minimum. Everything else runs in simulation.
-
-**2. Start the backend**
-
+### 2. Start Backend
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # macOS/Linux
-
+venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-API runs at `http://localhost:8000`. Docs at `http://localhost:8000/docs`.
-
-**3. Start the frontend**
-
+### 3. Start Frontend
 ```bash
 cd frontend
 npm install
 npm start
 ```
-
-Dashboard runs at `http://localhost:3000`. When the ONLINE indicator turns green, the system is ready.
+*Dashbord runs at `localhost:3000`. Wait for the ONLINE indicator to turn green.*
 
 ---
 
-## Project Structure
+## 🧠 Core Technologies
 
+### 1. Real TinyML Engine
+The protocol uses a **Scikit-learn RandomForestClassifier** trained on synthetic MFCC (Mel-frequency cepstral coefficients) data. It analyzes 13 audio coefficients to predict cough risk, which then fuels the governance pipeline.
+
+### 2. Executable Morpheme-X
+AI decisions are sealed into cryptographic units and submitted to **Hedera Consensus Service (HCS)**. This creates an immutable audit trail of clinical and financial actions, accessible via **HashScan** with one click from the dashboard.
+
+### 3. Meta-Sentinel (Economic Accountability)
+A rolling 2-sigma anomaly detector monitors agent outputs. Deviations trigger:
+1.  **HTS Slashing**: 10% of the agent's **AMXSTAKE** token balance is burned on-chain.
+2.  **Auto-Retraining**: The anomaly is flagged as a "hard negative" for the next model iteration.
+
+### 4. 3D Geo-Intelligence
+An interactive **3D Cobe Globe** visualizes the One Health network, tracking real-time risk markers in Dhaka (Critical), Nairobi (Vector), and Singapore (Nominal).
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    A[TinyML Engine: Scikit-learn] -->|MFCC Features| B[Risk Assessment]
+    B --> C{LangGraph Agent Mesh}
+    C --> D[Triage Agent]
+    C --> E[Diagnosis Agent]
+    C --> F[Finance Agent]
+    
+    G[Meta-Sentinel] -.->|Anomaly Detection| C
+    G -->|Block/Slash| H[Hedera Token Service - HTS]
+    
+    D & E & F --> I[Morpheme-X Unit]
+    I --> J[Hedera Consensus Service - HCS]
+    
+    F -->|Parametric Payout| K[HCVR Disbursal via HTS]
+    
+    J --> L[Real-Time Dashboard]
 ```
-amx-protocol/
-├── backend/
-│   ├── agents/
-│   │   ├── graph.py            # LangGraph state machine
-│   │   ├── triage.py           # Triage agent (URGENT/CONSULT/SELF_CARE)
-│   │   ├── diagnosis.py        # Clinical diagnosis agent
-│   │   ├── finance.py          # Adaptive parametric engine
-│   │   ├── epidemiology.py     # One Health + HOL commerce
-│   │   └── sentinel.py         # Meta-Sentinel (z-score anomaly detection)
-│   ├── hedera/
-│   │   ├── hcs.py              # HCS Morpheme-X submission
-│   │   ├── hts.py              # HTS token slashing + payouts
-│   │   └── registry.py         # HOL agent registry
-│   ├── one_health/
-│   │   ├── weather.py          # OpenWeatherMap risk feed
-│   │   ├── livestock.py        # Livestock disease CSV parser
-│   │   └── livestock_data.csv
-│   ├── main.py                 # FastAPI + WebSocket server
-│   └── requirements.txt
-├── frontend/
-│   └── src/
-│       ├── App.tsx             # Root app + GSAP cursor physics
-│       ├── Dashboard.js        # Real-time WebSocket dashboard
-│       ├── CustomCursor.tsx    # Hardware-accelerated cursor
-│       ├── ScenarioSwitcher.js # Scenario execution controls
-│       ├── OneHealthMap.js     # Radial SVG geographic visualization
-│       └── index.css           # Institutional cyan/acid/orange aesthetic
-├── docs/
-├── tests/
-└── .env.example
-```
 
 ---
 
-## API Reference
+## 📂 Project Structure
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/status` | System health |
-| POST | `/api/simulate/cough?scenario=normal` | Simulate TinyML cough analysis |
-| POST | `/api/analyze` | Run full AMX pipeline |
-| POST | `/api/analyze/anomaly` | Force anomaly scenario |
-| GET | `/api/agents/stakes` | AMXSTAKE balances |
-| GET | `/api/sentinel/log` | Anomaly detection log |
-| GET | `/api/retraining/log` | Agent retraining history |
-| GET | `/api/registry` | HOL agent directory |
-| GET | `/api/city/current` | Current city config |
-| POST | `/api/city/switch` | Switch city (Dhaka/Nairobi/Singapore) |
-| GET | `/api/city/available` | All available cities |
-| WS | `/ws` | Real-time event stream |
+- **`backend/`**: FastAPI server with LangGraph agents and TinyML engine.
+    - `agents/`: Clinical, financial, and sentinel agents.
+    - `one_health/`: TinyML engine and environmental risk feeds.
+    - `hedera/`: HCS and HTS SDK integrations.
+- **`frontend/`**: React 18 dashboard.
+    - `Dashboard.js`: Real-time state hub.
+    - `ImpactDashboard.js`: Cumulative metrics aggregator.
+    - `OneHealthMap.js`: Interactive 3D Globe (Cobe).
+    - `App.tsx`: GSAP physics and layout.
 
 ---
 
-## Environment Variables
+## ⚡ 1-Minute Demo Path for Judges
 
-| Variable | Default | Description |
-|---|---|---|
-| `SIMULATE_HCS` | `true` | Run without real Hedera credentials |
-| `HEDERA_NETWORK` | `testnet` | Hedera network |
-| `HEDERA_ACCOUNT_ID` | | Your Hedera account ID |
-| `HEDERA_PRIVATE_KEY` | | Your Hedera private key |
-| `HCS_TOPIC_ID` | | Morpheme-X HCS topic |
-| `HCS_SENTINEL_TOPIC_ID` | | Sentinel log HCS topic |
-| `HTS_TOKEN_ID` | | AMXSTAKE HTS token |
-| `OPENWEATHER_API_KEY` | | Live weather risk data |
-
-To switch from simulation to live Hedera: set `SIMULATE_HCS=false`, add your testnet credentials, and run `pip install hedera-sdk-py`.
+1.  **Launch Dashboard**: Wait for the "ONLINE" status.
+2.  **Select Scenario**: Click **[+] DHAKA_CRISIS** in the Scenario Switcher.
+3.  **Watch the Stream**: Observe TinyML analysis → Sentinel Check → Morpheme Sealing.
+4.  **Verify on Hedera**: Locate the newest Morpheme card and click **VERIFY ON HEDERA**. It will take you directly to HashScan to see the message sealed on HCS.
+5.  **Check Impact**: Observe the **ANOMALIES_BLOCKED** count increase in the Impact Dashboard as the Meta-Sentinel catches rogue logic.
 
 ---
 
-## Zero-Cost Deployment
-
-| Service | Purpose | Cost |
-|---|---|---|
-| GitHub | Code + CI/CD | Free |
-| Hedera Testnet | HCS/HTS operations | Free (faucet) |
-| Render | Backend hosting | Free tier |
-| Vercel | Frontend hosting | Free |
-| OpenWeatherMap | Weather data | 1000 calls/day free |
-
-Total monthly cost: $0
-
----
-
-## UI Design
-
-AMX uses an institutional command-center aesthetic rather than the standard "hacker green" look. The color system runs on cyan, acid green, and orange as semantic state indicators (Nominal, Critical, Vector). Custom GSAP cursor physics create magnetic interactions on action elements. The One Health map uses minimal radial SVG emission rather than heavy tile-based rendering.
-
----
-
-## Hedera Integration
-
-AMX uses two Hedera services:
-
-**HCS (Consensus Service):** Every Morpheme-X unit is submitted here for immutable, timestamped verification. You can click any transaction in the dashboard and verify it directly on HashScan.
-
-**HTS (Token Service):** AMXSTAKE tokens are minted, staked by agents, and slashed automatically when the Meta-Sentinel flags a violation.
-
-The HOL agent registry is simulated for this demo but follows the HCS-10/OpenConvAI spec for a real implementation.
-
----
-
-## Author
-
+## 🔗 Author
 **Tazwar Ahnaf**  
 [GitHub](https://github.com/tazwaryayyyy) · [X](https://x.com/TazwarEnan)
 
-MIT License. See [LICENSE](LICENSE).
+*Built for the Agents Assemble 2026 Hackathon.*

@@ -18,6 +18,7 @@ from retraining_scheduler import scheduler, auto_schedule_from_slashes
 from hedera.registry import get_full_registry
 from hedera.hts import get_agent_stakes, get_retraining_log, trigger_hcvr_payout
 from agents.graph import run_pipeline, sentinel
+from one_health.tinyml_engine import tinyml_engine
 from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -31,7 +32,7 @@ import sys
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 from dotenv import load_dotenv
 load_dotenv()  # ── Load environment variables immediately ──────────────────
@@ -52,12 +53,15 @@ logger = logging.getLogger("amx.main")
 
 async def broadcast_retraining_update(session_id: str, session_data: dict):
     """Broadcast retraining progress to all WebSocket clients."""
-    await manager.broadcast({
-        "type": "retraining_update",
-        "session_id": session_id,
-        "session": session_data,
-        "timestamp": int(time.time())
-    })
+    try: # BUGFIX: catch broadcast errors
+        await manager.broadcast({
+            "type": "retraining_update",
+            "session_id": session_id,
+            "session": session_data,
+            "timestamp": int(time.time())
+        })
+    except Exception as e: # BUGFIX: log but don't crash scheduler
+        logger.error(f"[Scheduler] Failed to broadcast update: {e}")
 
 
 class ConnectionManager:
@@ -81,8 +85,12 @@ class ConnectionManager:
         for ws in self.active.copy():
             try:
                 await ws.send_text(message)
-            except (RuntimeError, OSError):
+            except (RuntimeError, OSError, WebSocketDisconnect): # BUGFIX: catch more disconnect types
                 dead.append(ws)
+            except Exception as e: # BUGFIX: catch generic broadcast errors
+                logger.error(f"[WS] Broadcast error to {ws}: {e}")
+                dead.append(ws)
+                
         # Safely remove dead connections
         for ws in dead:
             if ws in self.active:
@@ -99,8 +107,11 @@ manager = ConnectionManager()
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pylint: disable=unused-argument,redefined-outer-name
     logger.info("AMX Protocol backend starting…")
-    # Start auto-scheduling retraining from existing slashes
-    auto_schedule_from_slashes()
+    try: # BUGFIX: ensure scheduler start doesn't crash app
+        # Start auto-scheduling retraining from existing slashes
+        auto_schedule_from_slashes()
+    except Exception as e: # BUGFIX: handle scheduler failure
+        logger.error(f"[Main] Failed to start auto-scheduler: {e}")
     yield
     logger.info("AMX Protocol backend shutting down.")
 
@@ -159,6 +170,11 @@ class AnalyzeResponse(BaseModel):
     state: dict
 
 
+class CoughSimulationRequest(BaseModel):
+    scenario: str = Field("normal", description="Scenario: normal | anomaly | low_risk | medium_risk")
+    features: Optional[List[float]] = Field(None, description="13 MFCC coefficients")
+
+
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
@@ -166,14 +182,17 @@ class AnalyzeResponse(BaseModel):
 @app.get("/api/city/current")
 async def get_current_city_endpoint():
     """Get the currently active city configuration."""
-    city = get_current_city()
-    city_info = set_current_city(city)  # This returns full config
-    return CityResponse(
-        city=city_info["city"],
-        config=city_info["config"],
-        weather_risk=city_info["weather_risk"],
-        message=f"Currently active city: {city}"
-    )
+    try: # BUGFIX: handle city config errors
+        city = get_current_city()
+        city_info = set_current_city(city)  # This returns full config
+        return CityResponse(
+            city=city_info["city"],
+            config=city_info["config"],
+            weather_risk=city_info["weather_risk"],
+            message=f"Currently active city: {city}"
+        )
+    except Exception as e: # BUGFIX: return JSON error
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/city/switch")
@@ -204,6 +223,8 @@ async def switch_city(request: CityRequest):
         logger.error("[API] City switch failed: %s", str(e))
         raise HTTPException(
             status_code=400, detail=f"Failed to switch city: {str(e)}") from e
+    except Exception as e: # BUGFIX: generic error handling
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @app.get("/api/city/available")
@@ -244,109 +265,154 @@ async def analyze(req: AnalyzeRequest):
     logger.info("[API] /analyze – risk=%.3f, scenario=%s",
                 req.risk, req.scenario)
 
-    # Broadcast risk_received event immediately
-    await manager.broadcast({
-        "type": "risk_received",
-        "risk": req.risk,
-        "scenario": req.scenario,
-        "timestamp": int(time.time()),
-    })
+    try: # BUGFIX: wrap pipeline triggers
+        # Broadcast risk_received event immediately
+        await manager.broadcast({
+            "type": "risk_received",
+            "risk": req.risk,
+            "scenario": req.scenario,
+            "timestamp": int(time.time()),
+        })
 
-    # Run pipeline (blocking, but fast for demo)
-    anomaly_override = "force_anomaly" if req.scenario == "anomaly" else None
+        # Run pipeline (blocking, but fast for demo)
+        anomaly_override = "force_anomaly" if req.scenario == "anomaly" else None
 
-    # Get current city for context-aware analysis
-    current_city = get_current_city()
+        # Get current city for context-aware analysis
+        current_city = get_current_city()
 
-    loop = asyncio.get_event_loop()
-    final_state = await loop.run_in_executor(
-        None, run_pipeline, req.risk, req.scenario, anomaly_override, current_city
-    )
-
-    # Broadcast all accumulated events
-    for event in final_state.get("events", []):
-        await manager.broadcast(event)
-
-    # Trigger HCVR payout if insurance activated
-    if final_state.get("insurance_trigger") and not final_state.get("blocked"):
-        payout = trigger_hcvr_payout(
-            amount=final_state["payout_amount"],
-            recipient=req.patient_id or "patient-0.0.9999999"
+        loop = asyncio.get_event_loop()
+        final_state = await loop.run_in_executor(
+            None, run_pipeline, req.risk, req.scenario, anomaly_override, current_city
         )
-        await manager.broadcast({"type": "hcvr_payout", **payout})
 
-    # Final summary event
-    await manager.broadcast({
-        "type": "pipeline_complete",
-        "risk": req.risk,
-        "triage": final_state.get("triage_decision"),
-        "blocked": final_state.get("blocked"),
-        "morpheme_tx": final_state.get("morpheme", {}).get("hedera_tx_id"),
-        "morpheme_explorer": final_state.get("morpheme", {}).get("explorer_url"),
-    })
+        # Broadcast all accumulated events
+        for event in final_state.get("events", []):
+            await manager.broadcast(event)
 
-    return AnalyzeResponse(ok=True, state=final_state)
+        # Trigger HCVR payout if insurance activated
+        if final_state.get("insurance_trigger") and not final_state.get("blocked"):
+            try: # BUGFIX: protect HTS call
+                payout = trigger_hcvr_payout(
+                    amount=final_state["payout_amount"],
+                    recipient=req.patient_id or "patient-0.0.9999999"
+                )
+                await manager.broadcast({"type": "hcvr_payout", **payout})
+            except Exception as e: # BUGFIX: log payout failure but don't crash response
+                logger.error(f"[HTS] Payout failure: {e}")
+
+        # Final summary event
+        await manager.broadcast({
+            "type": "pipeline_complete",
+            "risk": req.risk,
+            "triage": final_state.get("triage_decision"),
+            "blocked": final_state.get("blocked"),
+            "morpheme_tx": final_state.get("morpheme", {}).get("hedera_tx_id"),
+            "morpheme_explorer": final_state.get("morpheme", {}).get("explorer_url"),
+        })
+
+        return AnalyzeResponse(ok=True, state=final_state)
+    except Exception as e: # BUGFIX: ensure JSON error response
+        logger.error(f"[API] Analyze failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/analyze/anomaly")
 async def analyze_anomaly():
     """Demo endpoint: forces an anomaly scenario with a suspicious risk value."""
-    req = AnalyzeRequest(risk=0.9, scenario="anomaly")
-    return await analyze(req)
+    try: # BUGFIX: wrap demo call
+        req = AnalyzeRequest(risk=0.9, scenario="anomaly")
+        return await analyze(req)
+    except Exception as e: # BUGFIX: return JSON error
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/simulate/cough")
-async def simulate_cough(scenario: str = "normal"):
+async def simulate_cough(req: CoughSimulationRequest):
     """
-    Simulate a cough analysis using a pre-recorded high-risk value.
-    Mimics TinyML edge inference output.
+    Simulate or analyze a cough using TinyML MFCC features.
+    If 'features' are provided, uses the real scikit-learn model.
+    If 'features' are missing, simulates them based on 'scenario'.
     """
-    # Use realistic cough risk scores (ICBHI 2017 dataset-calibrated)
-    if scenario == "anomaly":
-        risk = 0.9
-    elif scenario == "low_risk":
-        risk = round(random.uniform(0.2, 0.44), 3)
-    elif scenario == "medium_risk":
-        risk = round(random.uniform(0.45, 0.74), 3)
-    else:
-        # High risk for dramatic demo
-        risk = round(random.uniform(0.75, 0.96), 3)
+    try: # BUGFIX: wrap simulation call
+        scenario = req.scenario
+        mfccs = req.features
 
-    req = AnalyzeRequest(risk=risk, scenario=scenario)
-    return await analyze(req)
+        if mfccs is None:
+            # Generate simulated MFCCs for the demo if not provided
+            if scenario == "anomaly":
+                # High risk pattern
+                mfccs = [25.0 + random.uniform(-2, 2) for _ in range(13)]
+                mfccs[0] += 10.0 # High energy
+            elif scenario == "low_risk":
+                mfccs = [10.0 + random.uniform(-1, 1) for _ in range(13)]
+            elif scenario == "medium_risk":
+                mfccs = [15.0 + random.uniform(-1.5, 1.5) for _ in range(13)]
+                mfccs[1] += 5.0
+            else:
+                # Default "normal" high risk for demo impact
+                mfccs = [22.0 + random.uniform(-2, 2) for _ in range(13)]
+                mfccs[0] += 5.0
+
+        # Get real risk score from the TinyML model
+        risk = tinyml_engine.predict_risk(mfccs)
+
+        logger.info("[TinyML] Prediction: risk=%.3f using features: %s", risk, mfccs[:3])
+
+        analyze_req = AnalyzeRequest(risk=risk, scenario=scenario)
+        return await analyze(analyze_req)
+    except Exception as e: # BUGFIX: return JSON error
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/agents/stakes")
 async def agent_stakes():
-    return {"stakes": get_agent_stakes(), "token": "AMXSTAKE", "timestamp": int(time.time())}
+    try: # BUGFIX: wrap HTS call
+        return {"stakes": get_agent_stakes(), "token": "AMXSTAKE", "timestamp": int(time.time())}
+    except Exception as e: # BUGFIX: return JSON error
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/sentinel/log")
 async def sentinel_log():
-    return {"anomalies": sentinel.get_anomaly_log(), "count": len(sentinel.get_anomaly_log())}
+    try: # BUGFIX: wrap sentinel call
+        return {"anomalies": sentinel.get_anomaly_log(), "count": len(sentinel.get_anomaly_log())}
+    except Exception as e: # BUGFIX: return JSON error
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/retraining/log")
 async def retraining_log():
-    return {"retraining": get_retraining_log()}
+    try: # BUGFIX: wrap HTS call
+        return {"retraining": get_retraining_log()}
+    except Exception as e: # BUGFIX: return JSON error
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/retraining/sessions")
 async def retraining_sessions():
     """Return active and completed retraining sessions."""
-    return scheduler.get_all_sessions()
+    try: # BUGFIX: wrap scheduler call
+        return scheduler.get_all_sessions()
+    except Exception as e: # BUGFIX: return JSON error
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/retraining/auto-schedule")
 async def trigger_auto_schedule():
     """Manually trigger auto-scheduling of retraining from recent slashes."""
-    auto_schedule_from_slashes()
-    return {"message": "Auto-scheduling triggered", "sessions": scheduler.get_all_sessions()}
+    try: # BUGFIX: wrap scheduler call
+        auto_schedule_from_slashes()
+        return {"message": "Auto-scheduling triggered", "sessions": scheduler.get_all_sessions()}
+    except Exception as e: # BUGFIX: return JSON error
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/registry")
 async def registry():
-    return {"agents": get_full_registry()}
+    try: # BUGFIX: wrap registry call
+        return {"agents": get_full_registry()}
+    except Exception as e: # BUGFIX: return JSON error
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---------------------------------------------------------------------------
@@ -357,12 +423,18 @@ async def registry():
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     # Send initial state on connection
-    await websocket.send_text(json.dumps({
-        "type": "connected",
-        "message": "AMX Protocol WebSocket active",
-        "timestamp": int(time.time()),
-        "stakes": get_agent_stakes(),
-    }))
+    try: # BUGFIX: protect initial state send
+        await websocket.send_text(json.dumps({
+            "type": "connected",
+            "message": "AMX Protocol WebSocket active",
+            "timestamp": int(time.time()),
+            "stakes": get_agent_stakes(),
+        }))
+    except Exception as e: # BUGFIX: catch early disconnect
+        logger.warning(f"[WS] Failed to send initial state: {e}")
+        manager.disconnect(websocket)
+        return
+
     try:
         while True:
             # Keep connection alive; client messages are optional
@@ -378,10 +450,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     "message": "Invalid JSON format",
                     "timestamp": int(time.time())
                 }))
+            except Exception as e: # BUGFIX: catch internal loop errors
+                logger.error(f"[WS] Message processing error: {e}")
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except (RuntimeError, OSError) as e:
-        logger.error("[WS] Error: %s", str(e))
+        logger.error("[WS] Connection lost: %s", str(e))
+        manager.disconnect(websocket)
+    except Exception as e: # BUGFIX: catch-all for unknown WS issues to prevent server crash
+        logger.error("[WS] Fatal handler error: %s", str(e))
         manager.disconnect(websocket)
 
 

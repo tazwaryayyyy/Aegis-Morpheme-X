@@ -5,7 +5,17 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 
-const WS_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws';
+// BUGFIX: Improved WS_URL fallback logic to use REACT_APP_BACKEND_URL
+const getWsUrl = () => {
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g. http://localhost:8000
+  if (backendUrl) {
+    const wsBase = backendUrl.replace(/^http/, 'ws');
+    return `${wsBase}/ws`;
+  }
+  return process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws';
+};
+
+const WS_URL = getWsUrl();
 const RECONNECT_INTERVAL = 3000;
 const MAX_RECONNECT = 10;
 
@@ -15,21 +25,31 @@ export function useAMXWebSocket(onEvent) {
   const reconnectTimer = useRef(null);
   const [connected, setConnected] = useState(false);
   const onEventRef = useRef(onEvent);
+  const isMounted = useRef(true); // BUGFIX: track mount status
 
   // Update onEvent ref when it changes
   useEffect(() => {
     onEventRef.current = onEvent;
   }, [onEvent]);
 
+  // BUGFIX: Track mount status for safe state updates
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
+
   const connect = useCallback(() => {
     try {
+      if (!isMounted.current) return; // BUGFIX: don't connect if unmounted
+
       const ws = new WebSocket(WS_URL);
       wsRef.current = ws;
 
       ws.onopen = () => {
         console.log('[AMX WS] Connected');
-        setConnected(true);
+        if (isMounted.current) setConnected(true); // BUGFIX: safe state update
         reconnectCount.current = 0;
+        
         // Start keepalive ping
         const pingInterval = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
@@ -37,13 +57,13 @@ export function useAMXWebSocket(onEvent) {
           }
         }, 25000);
         ws._pingInterval = pingInterval;
-        wsRef.current._pingInterval = pingInterval;
       };
 
       ws.onmessage = (event) => {
+        if (!isMounted.current) return; // BUGFIX: don't process if unmounted
         try {
           const data = JSON.parse(event.data);
-          if (data.type !== 'pong') {
+          if (data && data.type !== 'pong') { // BUGFIX: null check data
             onEventRef.current(data);
           }
         } catch (e) {
@@ -53,11 +73,16 @@ export function useAMXWebSocket(onEvent) {
 
       ws.onclose = () => {
         console.log('[AMX WS] Disconnected');
-        setConnected(false);
-        clearInterval(ws._pingInterval);
-        if (reconnectCount.current < MAX_RECONNECT) {
+        if (isMounted.current) setConnected(false); // BUGFIX: safe state update
+        
+        if (ws._pingInterval) clearInterval(ws._pingInterval);
+        
+        // BUGFIX: prevent multiple timers
+        if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+        
+        if (isMounted.current && reconnectCount.current < MAX_RECONNECT) {
           reconnectCount.current += 1;
-          reconnectTimer.current = setTimeout(connect, RECONNECT_INTERVAL);
+          reconnectTimer.current = setTimeout(connect, RECONNECT_INTERVAL); // BUGFIX: 3s reconnect
         }
       };
 
@@ -67,24 +92,25 @@ export function useAMXWebSocket(onEvent) {
       };
     } catch (e) {
       console.error('[AMX WS] Failed to connect:', e);
-      setConnected(false);
+      if (isMounted.current) setConnected(false);
     }
-  }, []); // Empty dependency array to prevent infinite reconnection
+  }, []);
 
   useEffect(() => {
     connect();
     return () => {
-      clearTimeout(reconnectTimer.current);
+      // BUGFIX: robust cleanup
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       if (wsRef.current) {
-        // Clear ping interval
         if (wsRef.current._pingInterval) {
           clearInterval(wsRef.current._pingInterval);
         }
-        wsRef.current.onclose = null;
+        wsRef.current.onclose = null; // BUGFIX: prevent close listener from firing reconnect
+        wsRef.current.onerror = null;
         wsRef.current.close();
       }
     };
-  }, []); // Empty dependency array to prevent re-running on connect change
+  }, [connect]);
 
   const send = useCallback((payload) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
