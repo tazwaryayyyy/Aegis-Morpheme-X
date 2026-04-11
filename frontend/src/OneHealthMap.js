@@ -87,8 +87,8 @@ const CITIES = {
 };
 Object.values(CITIES).forEach(c => { c.x = mx(c.lon); c.y = my(c.lat); });
 
-const LW = 134; // label card width
-const LH = 42;  // label card height
+const LW = 160; // enlarged label card width
+const LH = 54;  // enlarged label card height
 
 // ─── Component ────────────────────────────────────────────────────────────────
 const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) => {
@@ -256,25 +256,25 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
               >
                 {/* Ping rings */}
                 {isOn && <>
-                  <circle cx={c.x} cy={c.y} r={22} fill="none"
-                    stroke={c.color} strokeWidth={1} className="oh-ping" />
-                  <circle cx={c.x} cy={c.y} r={13} fill="none"
-                    stroke={c.color} strokeWidth={0.5} opacity={0.4} className="oh-ping"
+                  <circle cx={c.x} cy={c.y} r={32} fill="none"
+                    stroke={c.color} strokeWidth={1.5} className="oh-ping" />
+                  <circle cx={c.x} cy={c.y} r={18} fill="none"
+                    stroke={c.color} strokeWidth={0.8} opacity={0.4} className="oh-ping"
                     style={{ animationDelay: '.65s' }} />
                 </>}
 
                 {/* Crosshair */}
-                <g stroke={c.color} strokeWidth={0.7} opacity={isOn ? 0.55 : 0.22}>
-                  <line x1={c.x - 24} y1={c.y} x2={c.x - 8} y2={c.y} />
-                  <line x1={c.x + 8}  y1={c.y} x2={c.x + 24} y2={c.y} />
-                  <line x1={c.x} y1={c.y - 24} x2={c.x} y2={c.y - 8} />
-                  <line x1={c.x} y1={c.y + 8}  x2={c.x} y2={c.y + 24} />
+                <g stroke={c.color} strokeWidth={1} opacity={isOn ? 0.7 : 0.3}>
+                  <line x1={c.x - 32} y1={c.y} x2={c.x - 12} y2={c.y} />
+                  <line x1={c.x + 12}  y1={c.y} x2={c.x + 32} y2={c.y} />
+                  <line x1={c.x} y1={c.y - 32} x2={c.x} y2={c.y - 12} />
+                  <line x1={c.x} y1={c.y + 12}  x2={c.x} y2={c.y + 32} />
                 </g>
 
                 {/* Core dot */}
-                <circle cx={c.x} cy={c.y} r={isOn ? 6.5 : 5}
+                <circle cx={c.x} cy={c.y} r={isOn ? 9 : 7}
                   fill={c.color} filter="url(#ohGlow)" />
-                <circle cx={c.x} cy={c.y} r={isOn ? 2.8 : 2.2}
+                <circle cx={c.x} cy={c.y} r={isOn ? 4 : 3}
                   fill="#ffffff" opacity={0.95} />
 
                 {/* Label card — drop shadow */}
@@ -284,22 +284,22 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
                 <rect x={lx} y={ly} width={LW} height={LH} rx={3}
                   fill="rgba(4,7,15,0.95)"
                   stroke={c.color}
-                  strokeWidth={isOn ? 0.9 : 0.45}
-                  strokeOpacity={isOn ? 0.88 : 0.38} />
+                  strokeWidth={isOn ? 1.2 : 0.6}
+                  strokeOpacity={isOn ? 0.95 : 0.45} />
                 {/* Corner accents */}
-                <path d={`M${lx},${ly + 9}V${ly}H${lx + 9}`}
-                  fill="none" stroke={c.color} strokeWidth={1.4} opacity={0.8} />
-                <path d={`M${lx + LW},${ly + LH - 9}V${ly + LH}H${lx + LW - 9}`}
-                  fill="none" stroke={c.color} strokeWidth={1.4} opacity={0.8} />
+                <path d={`M${lx},${ly + 12}V${ly}H${lx + 12}`}
+                  fill="none" stroke={c.color} strokeWidth={1.8} opacity={0.8} />
+                <path d={`M${lx + LW},${ly + LH - 12}V${ly + LH}H${lx + LW - 12}`}
+                  fill="none" stroke={c.color} strokeWidth={1.8} opacity={0.8} />
 
                 {/* City name */}
                 <text
-                  x={lx + (flip ? LW - 9 : 9)}
-                  y={ly + 17}
+                  x={lx + (flip ? LW - 12 : 12)}
+                  y={ly + 22}
                   textAnchor={flip ? 'end' : 'start'}
                   fill={c.color}
                   filter="url(#ohGlowSm)"
-                  fontSize={14} fontWeight="900"
+                  fontSize={20} fontWeight="900"
                   fontFamily='"Courier New", Courier, monospace'
                   letterSpacing="0.07em"
                 >
@@ -308,13 +308,13 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
 
                 {/* Coordinates */}
                 <text
-                  x={lx + (flip ? LW - 9 : 9)}
-                  y={ly + 32}
+                  x={lx + (flip ? LW - 12 : 12)}
+                  y={ly + 40}
                   textAnchor={flip ? 'end' : 'start'}
-                  fill="rgba(170,205,255,0.55)"
-                  fontSize={8.5}
+                  fill="rgba(170,205,255,0.7)"
+                  fontSize={11}
                   fontFamily='"Courier New", Courier, monospace'
-                  letterSpacing="0.03em"
+                  letterSpacing="0.04em"
                 >
                   {c.coords}
                 </text>
@@ -409,7 +409,7 @@ const S = {
     marginBottom:8, display:'flex', alignItems:'center', gap:6,
   },
   dot: { width:6, height:6, borderRadius:'50%', flexShrink:0 },
-  tabRow: { display:'flex', gap:3, flexWrap:'wrap' },
+  tabRow: { display:'flex', gap:8, flexWrap:'nowrap' },
   tab: {
     padding:'6px 12px', borderRadius:3, cursor:'pointer',
     fontFamily:'"Courier New", Courier, monospace',
