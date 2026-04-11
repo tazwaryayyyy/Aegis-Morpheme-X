@@ -43,7 +43,7 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
 
   const cities = {
     Dhaka: {
-      x: 751, y: 184,
+      x: 695, y: 118,
       color: '#FF3B3B',
       glowColor: 'rgba(255,59,59,0.35)',
       name: 'DHAKA',
@@ -58,7 +58,7 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
       vectorIdx: 94,
     },
     Nairobi: {
-      x: 602, y: 253,
+      x: 283, y: 257,
       color: '#FF9F1C',
       glowColor: 'rgba(255,159,28,0.3)',
       name: 'NAIROBI',
@@ -73,7 +73,7 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
       vectorIdx: 62,
     },
     Singapore: {
-      x: 788, y: 246,
+      x: 799, y: 242,
       color: '#00E5A0',
       glowColor: 'rgba(0,229,160,0.25)',
       name: 'SINGAPORE',
@@ -316,43 +316,21 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
             stroke="rgba(0,200,255,0.05)" strokeWidth="0.6"
             strokeDasharray="3 8"/>
 
-          <g fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.6">
-            {/* North America */}
-            <path d="M135 80 L155 72 L178 66 L200 64 L222 66 L242 70 L258 76 L274 84 L286 94 L296 106 L304 120 L310 136 L314 152 L312 168 L306 182 L316 194 L322 208 L320 224 L312 240 L300 256 L286 272 L272 290 L260 310 L250 332 L242 352 L234 366 L224 372 L216 365 L208 348 L198 326 L186 304 L172 280 L158 256 L146 232 L134 208 L122 186 L114 166 L110 148 L112 130 L118 114 L126 98 Z"/>
-            <path d="M246 342 L256 350 L264 366 L260 380 L250 384 L240 374 L238 358 Z"/>
-            <path d="M232 370 L242 368 L252 374 L258 388 L268 400 L274 410 L268 416 L258 412 L248 404 L240 392 L234 382 Z"/>
-            <path d="M310 42 L332 36 L356 38 L378 44 L392 54 L396 68 L388 82 L372 92 L352 96 L332 94 L318 86 L308 72 Z"/>
-            {/* South America */}
-            <path d="M238 376 L260 366 L282 362 L304 366 L322 374 L336 388 L344 406 L350 428 L352 452 L346 474 L334 490 L316 498 L296 496 L278 486 L262 470 L250 450 L240 428 L234 406 L232 390 Z"/>
-            {/* Europe */}
-            <path d="M440 92 L456 84 L474 80 L492 78 L508 82 L522 90 L532 102 L538 118 L536 134 L528 148 L516 158 L500 164 L482 166 L466 162 L452 154 L442 142 L436 126 L436 108 Z"/>
-            <path d="M472 78 L482 64 L492 54 L502 50 L510 56 L512 68 L506 76 L496 80 L484 80 Z"/>
-            <path d="M416 94 L422 86 L428 88 L430 98 L426 106 L418 108 L414 102 Z"/>
-            {/* Africa */}
-            <path d="M446 174 L472 164 L500 160 L528 162 L554 170 L574 184 L590 204 L600 228 L604 256 L604 286 L598 316 L586 346 L570 374 L550 400 L530 422 L512 436 L494 442 L478 438 L464 424 L452 404 L442 378 L436 348 L432 316 L430 284 L432 252 L436 222 L440 196 Z"/>
-            <path d="M624 316 L632 306 L638 318 L640 338 L636 356 L628 360 L620 346 L618 328 Z"/>
-            {/* Middle East */}
-            <path d="M544 140 L568 134 L594 132 L618 138 L634 150 L642 166 L636 184 L622 196 L602 204 L578 206 L558 200 L544 186 L538 168 L538 152 Z"/>
-            {/* Russia / Central Asia */}
-            <path d="M540 90 L576 82 L616 76 L658 72 L700 70 L742 72 L782 78 L818 86 L848 96 L872 110 L890 126 L900 146 L898 166 L888 182 L872 194 L852 204 L828 212 L802 218 L778 222 L754 226 L730 228 L706 224 L682 218 L658 212 L634 206 L612 200 L592 194 L574 186 L558 174 L546 160 L540 142 L536 120 L536 104 Z"/>
-            {/* India & SE Asia */}
-            <path d="M656 218 L680 210 L704 212 L724 220 L736 236 L740 256 L738 278 L728 300 L714 318 L696 328 L678 324 L664 308 L656 288 L652 266 L650 244 Z"/>
-            <path d="M698 328 L706 324 L710 336 L704 344 L696 340 Z"/>
-            <path d="M742 244 L758 248 L772 258 L782 274 L784 294 L778 312 L768 324 L756 326 L748 316 L744 296 L740 272 L738 256 Z"/>
-            {/* East Asia & Japan */}
-            <path d="M778 178 L792 172 L804 180 L808 194 L800 204 L788 206 L780 198 Z"/>
-            <path d="M880 130 L890 122 L898 126 L900 138 L896 152 L888 162 L880 158 L876 146 L876 136 Z"/>
-            {/* Islands */}
-            <path d="M798 272 L818 266 L834 272 L838 284 L828 294 L810 296 L800 288 Z"/>
-            <path d="M844 276 L864 270 L878 278 L874 292 L860 298 L846 292 Z"/>
-            <path d="M880 282 L896 278 L904 288 L896 298 L882 296 Z"/>
-            <path d="M808 300 L828 296 L836 308 L826 318 L810 316 Z"/>
-            <path d="M842 300 L858 298 L864 310 L854 318 L842 314 Z"/>
-            {/* Australia */}
-            <path d="M800 340 L830 330 L864 326 L900 328 L930 338 L950 356 L956 378 L952 404 L940 426 L920 442 L894 450 L866 452 L838 446 L814 434 L798 416 L790 394 L788 370 L792 352 Z"/>
-            <path d="M882 458 L894 454 L900 464 L894 474 L882 472 L878 466 Z"/>
-            <path d="M958 388 L966 380 L972 388 L970 402 L964 412 L956 408 L954 396 Z"/>
-            <path d="M960 416 L966 412 L970 420 L964 428 L958 424 Z"/>
+          <g fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" strokeWidth="0.8">
+            {/* Africa Coastline - Zoomed (approx 0E to 50E) */}
+            <path d="M 0 50 L 80 80 L 120 150 L 100 220 L 150 280 L 260 250 L 320 220 L 350 260 L 330 380 L 280 450 L 200 480 L 120 450 L 80 400 L 40 300 L 0 250 Z" />
+            
+            {/* Arabian Peninsula */}
+            <path d="M 360 180 L 480 180 L 520 260 L 460 300 L 380 260 L 350 210 Z" />
+
+            {/* India / South Asia Subcontinent */}
+            <path d="M 580 140 L 650 130 L 740 140 L 780 180 L 760 250 L 680 380 L 620 250 L 580 200 Z" />
+
+            {/* SE Asia & Indonesia archipelago */}
+            <path d="M 790 200 L 830 240 L 840 320 L 790 320 L 775 250 Z" />
+            <path d="M 800 340 L 880 400 L 840 430 Z" /> {/* Sumatra approx */}
+            <path d="M 890 320 L 960 330 L 980 400 L 920 420 Z" /> {/* Borneo / Sulawesi approx */}
+            <path d="M 930 150 L 970 200 L 950 280 Z" /> {/* Philippines approx */}
           </g>
 
           <g stroke="rgba(0,200,255,0.18)" strokeWidth="1" fill="none">
