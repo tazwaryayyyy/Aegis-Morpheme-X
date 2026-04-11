@@ -87,8 +87,8 @@ const CITIES = {
 };
 Object.values(CITIES).forEach(c => { c.x = mx(c.lon); c.y = my(c.lat); });
 
-const LW = 160; // enlarged label card width
-const LH = 54;  // enlarged label card height
+const LW = 180; // further enlarged label card width
+const LH = 60;  // further enlarged label card height
 
 // ─── Component ────────────────────────────────────────────────────────────────
 const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) => {
@@ -172,8 +172,8 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
 
         {/* Clock — fixed width, never wraps */}
         <div style={S.clock}>
-          <div style={{ color: 'rgba(255,255,255,0.18)', marginBottom: 2 }}>AMX&nbsp;v3.1</div>
-          <div style={{ color: 'rgba(255,255,255,0.55)' }}>{time}</div>
+          <div style={{ color: 'rgba(255,255,255,0.22)', marginBottom: 2, fontSize: 10, fontWeight: 700 }}>UTC</div>
+          <div style={{ color: active.color, fontSize: 13, fontWeight: 700, filter: 'url(#ohGlowSm)' }}>{time}</div>
         </div>
       </div>
 
@@ -256,25 +256,25 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
               >
                 {/* Ping rings */}
                 {isOn && <>
-                  <circle cx={c.x} cy={c.y} r={32} fill="none"
-                    stroke={c.color} strokeWidth={1.5} className="oh-ping" />
-                  <circle cx={c.x} cy={c.y} r={18} fill="none"
-                    stroke={c.color} strokeWidth={0.8} opacity={0.4} className="oh-ping"
+                  <circle cx={c.x} cy={c.y} r={36} fill="none"
+                    stroke={c.color} strokeWidth={1.8} className="oh-ping" />
+                  <circle cx={c.x} cy={c.y} r={20} fill="none"
+                    stroke={c.color} strokeWidth={1} opacity={0.4} className="oh-ping"
                     style={{ animationDelay: '.65s' }} />
                 </>}
 
                 {/* Crosshair */}
-                <g stroke={c.color} strokeWidth={1} opacity={isOn ? 0.7 : 0.3}>
-                  <line x1={c.x - 32} y1={c.y} x2={c.x - 12} y2={c.y} />
-                  <line x1={c.x + 12}  y1={c.y} x2={c.x + 32} y2={c.y} />
-                  <line x1={c.x} y1={c.y - 32} x2={c.x} y2={c.y - 12} />
-                  <line x1={c.x} y1={c.y + 12}  x2={c.x} y2={c.y + 32} />
+                <g stroke={c.color} strokeWidth={1.2} opacity={isOn ? 0.8 : 0.4}>
+                  <line x1={c.x - 36} y1={c.y} x2={c.x - 14} y2={c.y} />
+                  <line x1={c.x + 14}  y1={c.y} x2={c.x + 36} y2={c.y} />
+                  <line x1={c.x} y1={c.y - 36} x2={c.x} y2={c.y - 14} />
+                  <line x1={c.x} y1={c.y + 14}  x2={c.x} y2={c.y + 36} />
                 </g>
 
                 {/* Core dot */}
-                <circle cx={c.x} cy={c.y} r={isOn ? 9 : 7}
+                <circle cx={c.x} cy={c.y} r={isOn ? 10 : 8}
                   fill={c.color} filter="url(#ohGlow)" />
-                <circle cx={c.x} cy={c.y} r={isOn ? 4 : 3}
+                <circle cx={c.x} cy={c.y} r={isOn ? 4.5 : 3.5}
                   fill="#ffffff" opacity={0.95} />
 
                 {/* Label card — drop shadow */}
@@ -284,24 +284,24 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
                 <rect x={lx} y={ly} width={LW} height={LH} rx={3}
                   fill="rgba(4,7,15,0.95)"
                   stroke={c.color}
-                  strokeWidth={isOn ? 1.2 : 0.6}
-                  strokeOpacity={isOn ? 0.95 : 0.45} />
+                  strokeWidth={isOn ? 1.5 : 0.8}
+                  strokeOpacity={isOn ? 1 : 0.5} />
                 {/* Corner accents */}
-                <path d={`M${lx},${ly + 12}V${ly}H${lx + 12}`}
-                  fill="none" stroke={c.color} strokeWidth={1.8} opacity={0.8} />
-                <path d={`M${lx + LW},${ly + LH - 12}V${ly + LH}H${lx + LW - 12}`}
-                  fill="none" stroke={c.color} strokeWidth={1.8} opacity={0.8} />
+                <path d={`M${lx},${ly + 14}V${ly}H${lx + 14}`}
+                  fill="none" stroke={c.color} strokeWidth={2} opacity={0.8} />
+                <path d={`M${lx + LW},${ly + LH - 14}V${ly + LH}H${lx + LW - 14}`}
+                  fill="none" stroke={c.color} strokeWidth={2} opacity={0.8} />
 
                 {/* City name */}
                 <text
-                  x={lx + (flip ? LW - 12 : 12)}
-                  y={ly + 22}
+                  x={lx + (flip ? LW - 14 : 14)}
+                  y={ly + 26}
                   textAnchor={flip ? 'end' : 'start'}
                   fill={c.color}
                   filter="url(#ohGlowSm)"
-                  fontSize={20} fontWeight="900"
+                  fontSize={22} fontWeight="950"
                   fontFamily='"Courier New", Courier, monospace'
-                  letterSpacing="0.07em"
+                  letterSpacing="0.08em"
                 >
                   {c.name}
                 </text>
