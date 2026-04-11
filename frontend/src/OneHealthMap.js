@@ -5,10 +5,7 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
   const [selectedCity, setSelectedCity] = useState(currentCity || 'Dhaka');
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
-  const globeInstanceRef = useRef(null);
-  const pointerInteracting = useRef(null);
-  const pointerRelativePos = useRef(0);
-  const phiRef = useRef(0);
+  const globeRef = useRef(null);
 
   useEffect(() => {
     if (currentCity) setSelectedCity(currentCity);
@@ -49,9 +46,12 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
     let width = 0;
 
     const initializeGlobe = (w) => {
-      if (globeInstanceRef.current) globeInstanceRef.current.destroy();
+      if (globeRef.current) globeRef.current.destroy();
       
-      globeInstanceRef.current = createGlobe(canvasRef.current, {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      globeRef.current = createGlobe(canvas, {
         devicePixelRatio: 2,
         width: w * 2,
         height: w * 2,
@@ -65,29 +65,18 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
         markerColor: [0.2, 0.85, 0.9],
         glowColor: [0.08, 0.08, 0.08],
         markers: [
-          { location: [23.81, 90.41], size: 0.05 },
-          { location: [-1.29, 36.82], size: 0.05 },
-          { location: [1.35, 103.82], size: 0.05 }
+          { location: [23.81, 90.41], size: 0.06 },   // Dhaka
+          { location: [-1.29, 36.82], size: 0.06 },   // Nairobi
+          { location: [1.35, 103.82], size: 0.06 }    // Singapore
         ],
         onRender: (state) => {
-          // Manual interaction offset
-          if (!pointerInteracting.current) {
-            phi += 0.003;
-          }
-          state.phi = phi + phiRef.current;
-
-          // Pulse effect fallback if needed, but keeping baseline config first
-          const pulse = Math.sin(Date.now() / 500) * 0.01;
-          state.markers.forEach(m => {
-            m.size = 0.05 + pulse;
-          });
+          state.phi = phi;
+          phi += 0.003;
         },
       });
 
-      // Canvas Opacity Fallback: Ensure visibility immediately
-      if (canvasRef.current) {
-        canvasRef.current.style.opacity = '1';
-      }
+      // Ensure canvas is visible immediately
+      canvas.style.opacity = '1';
     };
 
     const resizeObserver = new ResizeObserver((entries) => {
@@ -105,10 +94,7 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
     }
 
     return () => {
-      if (globeInstanceRef.current) {
-        globeInstanceRef.current.destroy();
-        globeInstanceRef.current = null;
-      }
+      if (globeRef.current) globeRef.current.destroy();
       resizeObserver.disconnect();
     };
   }, []);
@@ -168,24 +154,7 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
           width: '220px', 
           height: '220px', 
           margin: '10px auto',
-          position: 'relative', 
-          cursor: 'grab' 
-        }}
-        onPointerDown={(e) => {
-          pointerInteracting.current = e.clientX - pointerRelativePos.current;
-        }}
-        onPointerUp={() => {
-          pointerInteracting.current = null;
-        }}
-        onPointerOut={() => {
-          pointerInteracting.current = null;
-        }}
-        onMouseMove={(e) => {
-          if (pointerInteracting.current !== null) {
-            const delta = e.clientX - pointerInteracting.current;
-            pointerRelativePos.current = delta;
-            phiRef.current = delta / 200;
-          }
+          position: 'relative'
         }}
       >
         <canvas
