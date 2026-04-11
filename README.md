@@ -127,4 +127,3 @@ graph TD
 **Tazwar Ahnaf**  
 [GitHub](https://github.com/tazwaryayyyy) · [X](https://x.com/TazwarEnan)
 
-*Built for the Agents Assemble 2026 Hackathon.*
