@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import createGlobe from 'cobe';
-import './index.css';
 
 const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) => {
   const [selectedCity, setSelectedCity] = useState(currentCity || 'Dhaka');
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const globeInstanceRef = useRef(null);
   const pointerInteracting = useRef(null);
   const pointerRelativePos = useRef(0);
   const phiRef = useRef(0);
@@ -13,101 +14,109 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
     if (currentCity) setSelectedCity(currentCity);
   }, [currentCity]);
 
-  const handleCitySelect = (c) => {
-    setSelectedCity(c);
-    if (setSelectedCityExternal) setSelectedCityExternal(c);
-    
-    // Smoothly rotate to city when selected
-    const cityCoords = {
-      'Dhaka': 90.41,
-      'Nairobi': 36.82,
-      'Singapore': 103.82
-    };
-    if (cityCoords[c] !== undefined) {
-      // Crude logic to update phi, could be improved with easing
-      // setPhi(prev => prev + (cityCoords[c] / 180 * Math.PI));
-    }
-  };
-
   const cities = {
     'Dhaka': {
-      cx: 230, cy: 60,
-      color: '#FF4444', // BUGFIX: as requested critical red
+      color: '#FF4444',
       name: 'DHAKA',
       population: '21.0M',
       aqi: 162,
       climate: 'Monsoon',
       riskLevel: 'HIGH',
       baseOutbreak: 0.85,
-      location: [23.81, 90.41]
     },
     'Nairobi': {
-      cx: 100, cy: 160,
-      color: '#FF8C00', // BUGFIX: as requested vector orange
+      color: '#FF8C00',
       name: 'NAIROBI',
       population: '4.4M',
       aqi: 45,
       climate: 'Highland',
       riskLevel: 'MODERATE',
       baseOutbreak: 0.45,
-      location: [1.29, 36.82]
     },
     'Singapore': {
-      cx: 260, cy: 155,
-      color: '#AAFF00', // BUGFIX: as requested acid green
+      color: '#AAFF00',
       name: 'SINGAPORE',
       population: '5.9M',
       aqi: 25,
       climate: 'Tropical',
       riskLevel: 'LOW',
       baseOutbreak: 0.12,
-      location: [1.35, 103.82]
     }
   };
 
   useEffect(() => {
-    let currentPhi = 0;
-    let currentTheta = 0;
-    const doublePi = Math.PI * 2;
+    let phi = 0;
+    let width = 0;
 
-    const globe = createGlobe(canvasRef.current, {
-      devicePixelRatio: 2,
-      width: 320 * 2,
-      height: 220 * 2,
-      phi: 0,
-      theta: 0.3,
-      dark: 1,
-      diffuse: 1.2,
-      mapSamples: 16000,
-      mapBrightness: 6,
-      baseColor: [0.03, 0.03, 0.05], // Matching dark background
-      markerColor: [0.2, 0.8, 0.9], // Cyan as requested for markers
-      glowColor: [0.01, 0.01, 0.02], // Near-black glow
-      markers: [
-        { location: [23.81, 90.41], size: 0.08 },
-        { location: [1.29, 36.82], size: 0.08 },
-        { location: [1.35, 103.82], size: 0.08 },
-      ],
-      onRender: (state) => {
-        if (!pointerInteracting.current) {
-          // Auto-rotate logic as requested (speed 0.003)
-          currentPhi += 0.003;
+    const initializeGlobe = (w) => {
+      if (globeInstanceRef.current) globeInstanceRef.current.destroy();
+      
+      globeInstanceRef.current = createGlobe(canvasRef.current, {
+        devicePixelRatio: 2,
+        width: w * 2,
+        height: w * 2,
+        phi: 0,
+        theta: 0.3,
+        dark: 1,
+        diffuse: 1.4,
+        mapSamples: 16000,
+        mapBrightness: 8,
+        baseColor: [0.15, 0.15, 0.15],
+        markerColor: [0.2, 0.85, 0.9],
+        glowColor: [0.08, 0.08, 0.08],
+        markers: [
+          { location: [23.81, 90.41], size: 0.05 },
+          { location: [-1.29, 36.82], size: 0.05 },
+          { location: [1.35, 103.82], size: 0.05 }
+        ],
+        onRender: (state) => {
+          // Manual interaction offset
+          if (!pointerInteracting.current) {
+            phi += 0.003;
+          }
+          state.phi = phi + phiRef.current;
+
+          // Pulse effect fallback if needed, but keeping baseline config first
+          const pulse = Math.sin(Date.now() / 500) * 0.01;
+          state.markers.forEach(m => {
+            m.size = 0.05 + pulse;
+          });
+        },
+      });
+
+      // Canvas Opacity Fallback: Ensure visibility immediately
+      if (canvasRef.current) {
+        canvasRef.current.style.opacity = '1';
+      }
+    };
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const newWidth = entry.contentRect.width;
+        if (newWidth > 0 && newWidth !== width) {
+          width = newWidth;
+          initializeGlobe(newWidth);
         }
-        state.phi = currentPhi + phiRef.current;
-        state.theta = currentTheta;
-        
-        // Pulse effect implementation (cycling marker sizes)
-        const pulse = Math.sin(Date.now() / 300) * 0.02;
-        state.markers[0].size = 0.07 + pulse;
-        state.markers[1].size = 0.07 + pulse;
-        state.markers[2].size = 0.07 + pulse;
-      },
+      }
     });
 
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
     return () => {
-      globe.destroy();
+      if (globeInstanceRef.current) {
+        globeInstanceRef.current.destroy();
+        globeInstanceRef.current = null;
+      }
+      resizeObserver.disconnect();
     };
   }, []);
+
+  const handleCitySelect = (c) => {
+    setSelectedCity(c);
+    if (setSelectedCityExternal) setSelectedCityExternal(c);
+  };
 
   const activeData = cities[selectedCity] || cities['Dhaka'];
   const displayOutbreak = (selectedCity === currentCity && outbreakRisk !== null)
@@ -129,10 +138,9 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
               <React.Fragment key={city}>
                 <button
                   className="magnetic-btn"
-                  data-cursor={city === 'Dhaka' ? 'red' : city === 'Nairobi' ? 'orange' : 'acid'}
                   onClick={() => handleCitySelect(city)}
                   style={{
-                    background: 'transparent', border: 'none', cursor: 'none',
+                    background: 'transparent', border: 'none', cursor: 'pointer',
                     fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.18em',
                     textTransform: 'uppercase', paddingBottom: 8,
                     color: isActive ? 'inherit' : 'var(--text-secondary)',
@@ -155,43 +163,39 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
 
       {/* 3D Cobe Globe Visual Area */}
       <div 
+        ref={containerRef}
         style={{ 
-          width: '100%', 
-          height: 220, 
+          width: '220px', 
+          height: '220px', 
+          margin: '10px auto',
           position: 'relative', 
-          overflow: 'hidden', 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
           cursor: 'grab' 
         }}
         onPointerDown={(e) => {
           pointerInteracting.current = e.clientX - pointerRelativePos.current;
-          canvasRef.current.style.cursor = 'grabbing';
         }}
         onPointerUp={() => {
           pointerInteracting.current = null;
-          canvasRef.current.style.cursor = 'grab';
         }}
         onPointerOut={() => {
           pointerInteracting.current = null;
-          canvasRef.current.style.cursor = 'grab';
         }}
         onMouseMove={(e) => {
           if (pointerInteracting.current !== null) {
             const delta = e.clientX - pointerInteracting.current;
             pointerRelativePos.current = delta;
-            phiRef.current = delta / 100;
+            phiRef.current = delta / 200;
           }
         }}
       >
         <canvas
           ref={canvasRef}
           style={{
-            width: 320,
-            height: 220,
-            maxWidth: '100%',
-            aspectRatio: '320/220',
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            opacity: 0,
+            transition: 'opacity 1s ease',
           }}
         />
       </div>
@@ -200,23 +204,23 @@ const OneHealthMap = ({ currentCity, outbreakRisk, setSelectedCityExternal }) =>
       <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
           <span className="dense-label">POPULATION</span>
-          <span className="dense-val" style={{ opacity: 1, transition: 'opacity 0.15s' }}>{activeData.population}</span>
+          <span className="dense-val">{activeData.population}</span>
         </div>
         <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
           <span className="dense-label">AQI</span>
-          <span className="dense-val text-cyan" style={{ color: activeData.color, opacity: 1, transition: 'opacity 0.15s' }}>{activeData.aqi}</span>
+          <span className="dense-val" style={{ color: activeData.color }}>{activeData.aqi}</span>
         </div>
         <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
           <span className="dense-label">CLIMATE</span>
-          <span className="dense-val" style={{ opacity: 1, transition: 'opacity 0.15s' }}>{activeData.climate}</span>
+          <span className="dense-val">{activeData.climate}</span>
         </div>
         <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
           <span className="dense-label">RISK_LEVEL</span>
-          <span className="dense-val" style={{ opacity: 1, transition: 'opacity 0.15s' }}>{activeData.riskLevel}</span>
+          <span className="dense-val">{activeData.riskLevel}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
           <span className="dense-label">OUTBREAK_%</span>
-          <span className="dense-val text-cyan" style={{ color: activeData.color, opacity: 1, transition: 'opacity 0.15s' }}>{(displayOutbreak * 100).toFixed(1)}%</span>
+          <span className="dense-val" style={{ color: activeData.color }}>{(displayOutbreak * 100).toFixed(1)}%</span>
         </div>
       </div>
     </div>
