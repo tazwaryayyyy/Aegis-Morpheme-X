@@ -17,7 +17,7 @@ Traditional AI systems in healthcare operate as "black boxes" with no immutable 
 1.  **Initialize Protocol**: Open the dashboard and verify that the system is **ONLINE**. This establishes a persistent WebSocket connection to the AI agent mesh.
 2.  **Trigger Outbreak Scenario**: In the **Scenario Switcher** (left panel), click **[+] DHAKA_CRISIS**. This injects high-risk clinical data into the system and forces the agents into a stress-response mode.
 3.  **Observe Agent Reasoning**: Watch the **Real-Time Output Stream**. You will see the **TinyML Engine** analyzing audio cough data, followed by the **Sentinel** auditing the diagnosis, and finally the results being sealed as a **Morpheme-X unit**.
-4.  **Cryptographic Verification**: Locate the newest card in the **Morpheme History** and click **VERIFY ON HEDERA**. Observe the **tactical loading spinner** followed by the **on-chain verification toast**. This precisely simulates the time required for a public ledger audit before opening **HashScan**.
+4.  **Cryptographic Verification**: Locate the newest card in the **Morpheme History** and click **VERIFY ON HEDERA**. Observe the **tactical loading spinner** followed by the **on-chain verification toast**. This precisely follows the fallback mode for demo reliability pattern for the time required for a public ledger audit before opening **HashScan**.
 5.  **Audit the Impact**: Navigate to the **Impact Dashboard**. Observe that the **ANOMALIES_BLOCKED** count has incremented, demonstrating the Meta-Sentinel catching and neutralizing rogue logic in real-time.
 
 ---

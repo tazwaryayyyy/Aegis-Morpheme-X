@@ -1,6 +1,10 @@
 # AegisMorpheme-X (AMX) Protocol
 
+AMX makes AI financially liable in real time — a bad decision doesn't just get flagged, it gets penalized automatically and immutably.
+
 > "AI decisions must be provable, enforceable, and economically accountable — or they don't execute."
+
+**Value Proposition:** AegisMorpheme-X (AMX) is a decentralized governance layer for critical AI infrastructure, utilizing Hedera to enforce economic accountability on autonomous agents through real-time, immutable, and provable decision-sealing.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Hedera](https://img.shields.io/badge/Hedera-HCS%2FHTS-cyan)
@@ -8,6 +12,7 @@
 ![React](https://img.shields.io/badge/React-UI-blue)
 ![LangGraph](https://img.shields.io/badge/LangGraph-Agents-orange)
 
+**Current Demo Status**: ✅ Ready via fallback mode for demo reliability Hedera resources
 **Live Demo:** [aegis-morpheme-x.vercel.app](https://aegis-morpheme-x.vercel.app)  
 **Backend API:** [aegis-morpheme-x.onrender.com](https://aegis-morpheme-x.onrender.com)
 
@@ -29,7 +34,7 @@
 **Prerequisites**
 - Python 3.11+
 - Node.js 20+
-- No Hedera credentials needed to run in simulation mode (`SIMULATE_HCS=true`)
+- No Hedera credentials needed to run in fallback mode for demo reliability (`SIMULATE_HCS=true`)
 
 ### 1. Clone & Configure
 ```bash
@@ -37,7 +42,7 @@ git clone https://github.com/tazwaryayyyy/Aegis-Morpheme-X.git
 cd Aegis-Morpheme-X
 cp .env.example .env
 ```
-*Note: Ensure `SIMULATE_HCS=true` is set in `.env` to run without API keys.*
+*Note: Ensure `SIMULATE_HCS=true` is set in `.env` to run without API keys in fallback mode for demo reliability.*
 
 ### 2. Start Backend
 ```bash
@@ -67,7 +72,7 @@ The protocol uses a **Scikit-learn RandomForestClassifier** trained on synthetic
 AI decisions are sealed into cryptographic units and submitted to **Hedera Consensus Service (HCS)**. This creates an immutable audit trail of clinical and financial actions, accessible via **HashScan** with one click from the dashboard.
 
 ### 3. Meta-Sentinel (Economic Accountability)
-A rolling 2-sigma anomaly detector monitors agent outputs. Deviations trigger:
+A rolling statistical deviation-based anomaly detection with dynamic baselines monitors agent outputs. Deviations trigger:
 1.  **HTS Slashing**: 10% of the agent's **AMXSTAKE** token balance is burned on-chain.
 2.  **Auto-Retraining**: The anomaly is flagged as a "hard negative" for the next model iteration.
 
