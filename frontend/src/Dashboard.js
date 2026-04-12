@@ -6,6 +6,7 @@ import ReportExporter from './ReportExporter';
 import OneHealthMap from './OneHealthMap';
 import ImpactDashboard from './ImpactDashboard';
 import { useAMXWebSocket } from './websocket';
+import Toast from './Toast';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 const MAX_EVENTS = 80;
@@ -68,6 +69,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
   const [morphemeNew, setMorphemeNew]     = useState(false);
   const [runCount, setRunCount]           = useState(0);
   const [events, setEvents]               = useState(externalEvents || []);
+  const [showVerifyToast, setShowVerifyToast] = useState(false);
   
   const feedRef = useRef(null);
   const isMounted = useRef(true); // BUGFIX: mount tracking
@@ -269,7 +271,11 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
           </div>
 
           <div className="dashboard-card card">
-            <MorphemeCard morpheme={morpheme} isNew={morphemeNew} />
+            <MorphemeCard 
+              morpheme={morpheme} 
+              isNew={morphemeNew} 
+              onVerify={() => setShowVerifyToast(true)}
+            />
           </div>
 
           <div className={`dashboard-card card ${sentinelAlert ? 'anomaly-card' : ''}`}>
@@ -312,6 +318,12 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
           </div>
         </div>
       </div>
+
+      <Toast 
+        message="Verified on Hedera Consensus Service" 
+        isVisible={showVerifyToast} 
+        onClose={() => setShowVerifyToast(false)} 
+      />
     </>
   );
 };

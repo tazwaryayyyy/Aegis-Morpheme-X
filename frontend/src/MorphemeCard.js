@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 
-const MorphemeCard = ({ morpheme, isNew }) => {
+const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
   const [displayText, setDisplayText] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Matrix-style decode effect around the intent_hash
   useEffect(() => {
@@ -24,8 +25,33 @@ const MorphemeCard = ({ morpheme, isNew }) => {
     }
   }, [morpheme, isNew]);
 
+  const handleVerify = () => {
+    if (loading) return;
+    setLoading(true);
+    
+    setTimeout(() => {
+      window.open(morpheme.explorer_url, '_blank');
+      setLoading(false);
+      if (typeof onVerify === 'function') onVerify();
+    }, 1500);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <style>{`
+        @keyframes oh-spin {
+          to { transform: rotate(360deg); }
+        }
+        .loading-spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(170, 255, 0, 0.2);
+          border-top-color: var(--acid);
+          border-radius: 50%;
+          animation: oh-spin 0.6s linear infinite;
+        }
+      `}</style>
+      
       {/* Dynamic Header */}
       {morpheme ? (
         <div style={{
@@ -63,15 +89,9 @@ const MorphemeCard = ({ morpheme, isNew }) => {
             <div className="dense-row">
               <span className="dense-label">TX_HASH</span>
               {morpheme?.explorer_url ? (
-                <a
-                  href={morpheme.explorer_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="dense-val text-cyan"
-                  style={{ fontSize: 10, textDecoration: 'underline' }}
-                >
-                  {(morpheme?.hedera_tx_id || '0.0.0@0.0').slice(0, 20)}...
-                </a>
+                <span className="dense-val text-cyan" style={{ fontSize: 10 }}>
+                   {(morpheme?.hedera_tx_id || '0.0.0@0.0').slice(0, 20)}...
+                </span>
               ) : (
                 <span className="dense-val text-cyan" style={{ fontSize: 10 }}>
                   {(morpheme?.hedera_tx_id || '0.0.0@0.0').slice(0, 20)}...
@@ -146,39 +166,50 @@ const MorphemeCard = ({ morpheme, isNew }) => {
         <div style={{ padding: '0 20px 20px' }}>
           <button
             className="magnetic-btn"
-            onClick={() => window.open(morpheme.explorer_url, '_blank')}
+            onClick={handleVerify}
+            disabled={loading}
             style={{
               width: '100%',
               padding: '14px',
-              background: 'rgba(170, 255, 0, 0.05)',
-              border: '1px solid var(--acid)',
+              background: loading ? 'rgba(170, 255, 0, 0.02)' : 'rgba(170, 255, 0, 0.05)',
+              border: `1px solid ${loading ? 'rgba(170, 255, 0, 0.2)' : 'var(--acid)'}`,
               borderRadius: '4px',
-              color: 'var(--acid)',
+              color: loading ? 'rgba(170, 255, 0, 0.5)' : 'var(--acid)',
               fontFamily: 'var(--font-mono)',
               fontSize: '11px',
               fontWeight: 'bold',
               letterSpacing: '0.15em',
               textTransform: 'uppercase',
-              cursor: 'none',
+              cursor: loading ? 'not-allowed' : 'none',
               transition: 'all 0.2s ease',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '10px'
+              gap: '10px',
+              pointerEvents: loading ? 'none' : 'auto',
+              opacity: loading ? 0.7 : 1
             }}
             onMouseEnter={(e) => {
+              if (loading) return;
               e.currentTarget.style.background = 'rgba(170, 255, 0, 0.12)';
               e.currentTarget.style.transform = 'translateY(-2px)';
               e.currentTarget.style.boxShadow = '0 4px 12px rgba(170, 255, 0, 0.15)';
             }}
             onMouseLeave={(e) => {
+              if (loading) return;
               e.currentTarget.style.background = 'rgba(170, 255, 0, 0.05)';
               e.currentTarget.style.transform = 'translateY(0)';
               e.currentTarget.style.boxShadow = 'none';
             }}
           >
-            <span>VERIFY ON HEDERA</span>
-            <span style={{ fontSize: '14px' }}>↗</span>
+            {loading ? (
+              <div className="loading-spinner" />
+            ) : (
+              <>
+                <span>VERIFY ON HEDERA</span>
+                <span style={{ fontSize: '14px' }}>↗</span>
+              </>
+            )}
           </button>
         </div>
       )}

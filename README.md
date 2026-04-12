@@ -18,7 +18,7 @@
 | Criteria | AMX Implementation |
 |---|---|
 | **Innovation** | Provable AI decisions via "Executable Morpheme-X" units sealed on Hedera HCS. Real-time anomaly detection slashing agent stakes via HTS. |
-| **Presentation** | Institutional-grade dark dashboard with GSAP magnetic physics, real-time WebSockets, and a custom **interactive 3D Cobe globe**. |
+| **Presentation** | Institutional-grade dark dashboard with GSAP magnetic physics, real-time WebSockets, and an **Enhanced Verification UX** (Tactical Map + Animated Payout Verification). |
 | **Functionality** | End-to-end pipeline: **Real TinyML (Scikit-learn)** cough analysis → **LangGraph** agent mesh → **Hedera** settlement → **HCVR** parametric payouts. |
 | **Problem Solving** | Solves the "Black Box AI" risk in critical infrastructure by ensuring every decision is verifiable, immutable, and bounded by economic penalties. |
 
@@ -71,8 +71,8 @@ A rolling 2-sigma anomaly detector monitors agent outputs. Deviations trigger:
 1.  **HTS Slashing**: 10% of the agent's **AMXSTAKE** token balance is burned on-chain.
 2.  **Auto-Retraining**: The anomaly is flagged as a "hard negative" for the next model iteration.
 
-### 4. 3D Geo-Intelligence
-An interactive **3D Cobe Globe** visualizes the One Health network, tracking real-time risk markers in Dhaka (Critical), Nairobi (Vector), and Singapore (Nominal).
+### 4. Regional Geo-Intelligence
+A high-fidelity **Regional Tactical Map** visualizes the One Health network (0°E - 120°E), tracking geographically accurate risk markers in Dhaka, Nairobi, and Singapore with real-time tactical telemetry.
 
 ---
 
@@ -108,7 +108,7 @@ graph TD
 - **`frontend/`**: React 18 dashboard.
     - `Dashboard.js`: Real-time state hub.
     - `ImpactDashboard.js`: Cumulative metrics aggregator.
-    - `OneHealthMap.js`: Interactive 3D Globe (Cobe).
+    - `OneHealthMap.js`: High-Fidelity Regional Tactical Map.
     - `App.tsx`: GSAP physics and layout.
 
 ---
