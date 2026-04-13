@@ -17,7 +17,7 @@ const getWsUrl = () => {
 
 const WS_URL = getWsUrl();
 const RECONNECT_INTERVAL = 3000;
-const MAX_RECONNECT = 10;
+const MAX_RECONNECT = 100;
 
 export function useAMXWebSocket(onEvent) {
   const wsRef = useRef(null);

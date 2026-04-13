@@ -175,6 +175,10 @@ def sentinel_node(state: dict[str, Any]) -> dict[str, Any]:
 
             # Slash stake
             slash_result = slash_agent_stake(agent, penalty_percent=10)
+            
+            # BUGFIX: Reset agent history after slashing so it starts with a clean baseline
+            sentinel.reset_agent(agent)
+            
             events.append({
                 "type": "agent_slash",
                 "agent": agent,

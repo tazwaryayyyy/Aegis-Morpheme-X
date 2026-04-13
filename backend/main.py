@@ -125,7 +125,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://aegis-morpheme-x.vercel.app",
+        "https://aegis-morpheme-x-git-main-tazwaryayyyys-projects.vercel.app"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -242,6 +246,16 @@ async def get_available_cities():
             city_configs[city] = {"error": str(e)}
 
     return {"cities": city_configs}
+
+
+@app.get("/")
+async def root():
+    """Health check route for Render and other deployment platforms."""
+    return {
+        "status": "online",
+        "service": "AegisMorpheme-X Protocol Backend",
+        "timestamp": int(time.time())
+    }
 
 
 @app.get("/api/status")

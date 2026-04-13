@@ -256,7 +256,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
                   }
 
                   return (
-                    <div key={i} className={`event-item ${m.isAnomaly ? 'anomaly' : ''}`}>
+                    <div key={ev._ts || i} className={`event-item ${m.isAnomaly ? 'anomaly' : ''}`}>
                       {isNew && <div className="scan-line" />}
                       <span className="event-time">{fmtTime(ev._ts || Date.now())}</span>
                       <span className="event-arrow" style={{ color: iconCol }}>{'>'}</span>

@@ -74,12 +74,12 @@ class StatisticalSentinel:
                     f"mean={mean:.4f}, std={std:.4f}, zscore={zscore:.4f}"
                 )
                 self.anomaly_log.append(result.copy())
-
-            # Update history AFTER check to establish baseline for NEXT run
-            hist.append(value)
-            if len(hist) > self.window_size:
-                hist.pop(0)
-            self.history[agent] = hist
+            else:
+                # Update history ONLY if NO anomaly detected to prevent baseline poisoning
+                hist.append(value)
+                if len(hist) > self.window_size:
+                    hist.pop(0)
+                self.history[agent] = hist
 
             return result
 

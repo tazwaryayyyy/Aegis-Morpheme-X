@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "cobe": "^2.0.1",
     "framer-motion": "^12.38.0",
+    "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.378.0",
     "postcss": "^8.5.8",
