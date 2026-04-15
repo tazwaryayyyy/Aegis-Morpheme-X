@@ -12,6 +12,7 @@ Endpoints:
   GET  /api/retraining/log   – Retraining log
   WS   /ws                   – Real-time event stream
 """
+# pylint: disable=broad-exception-caught,raise-missing-from
 
 from one_health.weather import set_current_city, get_current_city
 from retraining_scheduler import scheduler, auto_schedule_from_slashes
@@ -60,8 +61,8 @@ async def broadcast_retraining_update(session_id: str, session_data: dict):
             "session": session_data,
             "timestamp": int(time.time())
         })
-    except Exception as e: # BUGFIX: log but don't crash scheduler
-        logger.error(f"[Scheduler] Failed to broadcast update: {e}")
+    except (RuntimeError, asyncio.TimeoutError) as e:
+        logger.error("[Scheduler] Failed to broadcast update: %s", str(e))
 
 
 class ConnectionManager:
@@ -85,10 +86,9 @@ class ConnectionManager:
         for ws in self.active.copy():
             try:
                 await ws.send_text(message)
-            except (RuntimeError, OSError, WebSocketDisconnect): # BUGFIX: catch more disconnect types
-                dead.append(ws)
-            except Exception as e: # BUGFIX: catch generic broadcast errors
-                logger.error(f"[WS] Broadcast error to {ws}: {e}")
+            except (RuntimeError, OSError, WebSocketDisconnect) as e:
+                if isinstance(e, (RuntimeError, OSError)):
+                    logger.error("[WS] Broadcast error: %s", str(e))
                 dead.append(ws)
                 
         # Safely remove dead connections
@@ -110,8 +110,8 @@ async def lifespan(app: FastAPI):  # pylint: disable=unused-argument,redefined-o
     try: # BUGFIX: ensure scheduler start doesn't crash app
         # Start auto-scheduling retraining from existing slashes
         auto_schedule_from_slashes()
-    except Exception as e: # BUGFIX: handle scheduler failure
-        logger.error(f"[Main] Failed to start auto-scheduler: {e}")
+    except (RuntimeError, OSError) as e:
+        logger.error("[Main] Failed to start auto-scheduler: %s", str(e))
     yield
     logger.info("AMX Protocol backend shutting down.")
 
@@ -195,8 +195,8 @@ async def get_current_city_endpoint():
             weather_risk=city_info["weather_risk"],
             message=f"Currently active city: {city}"
         )
-    except Exception as e: # BUGFIX: return JSON error
-        raise HTTPException(status_code=500, detail=str(e))
+    except (ValueError, RuntimeError, KeyError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/city/switch")
@@ -227,8 +227,8 @@ async def switch_city(request: CityRequest):
         logger.error("[API] City switch failed: %s", str(e))
         raise HTTPException(
             status_code=400, detail=f"Failed to switch city: {str(e)}") from e
-    except Exception as e: # BUGFIX: generic error handling
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    except (RuntimeError, asyncio.TimeoutError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/city/available")
@@ -311,8 +311,8 @@ async def analyze(req: AnalyzeRequest):
                     recipient=req.patient_id or "patient-0.0.9999999"
                 )
                 await manager.broadcast({"type": "hcvr_payout", **payout})
-            except Exception as e: # BUGFIX: log payout failure but don't crash response
-                logger.error(f"[HTS] Payout failure: {e}")
+            except (RuntimeError, ValueError) as e:
+                logger.error("[HTS] Payout failure: %s", str(e))
 
         # Final summary event
         await manager.broadcast({
@@ -325,9 +325,9 @@ async def analyze(req: AnalyzeRequest):
         })
 
         return AnalyzeResponse(ok=True, state=final_state)
-    except Exception as e: # BUGFIX: ensure JSON error response
-        logger.error(f"[API] Analyze failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except (RuntimeError, ValueError, KeyError) as e:
+        logger.error("[API] Analyze failed: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/analyze/anomaly")
@@ -336,8 +336,8 @@ async def analyze_anomaly():
     try: # BUGFIX: wrap demo call
         req = AnalyzeRequest(risk=0.9, scenario="anomaly")
         return await analyze(req)
-    except Exception as e: # BUGFIX: return JSON error
-        raise HTTPException(status_code=500, detail=str(e))
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/simulate/cough")
@@ -374,59 +374,59 @@ async def simulate_cough(req: CoughSimulationRequest):
 
         analyze_req = AnalyzeRequest(risk=risk, scenario=scenario)
         return await analyze(analyze_req)
-    except Exception as e: # BUGFIX: return JSON error
-        raise HTTPException(status_code=500, detail=str(e))
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/agents/stakes")
 async def agent_stakes():
-    try: # BUGFIX: wrap HTS call
+    try:
         return {"stakes": get_agent_stakes(), "token": "AMXSTAKE", "timestamp": int(time.time())}
-    except Exception as e: # BUGFIX: return JSON error
-        raise HTTPException(status_code=500, detail=str(e))
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/sentinel/log")
 async def sentinel_log():
-    try: # BUGFIX: wrap sentinel call
+    try:
         return {"anomalies": sentinel.get_anomaly_log(), "count": len(sentinel.get_anomaly_log())}
-    except Exception as e: # BUGFIX: return JSON error
-        raise HTTPException(status_code=500, detail=str(e))
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/retraining/log")
 async def retraining_log():
-    try: # BUGFIX: wrap HTS call
+    try:
         return {"retraining": get_retraining_log()}
-    except Exception as e: # BUGFIX: return JSON error
-        raise HTTPException(status_code=500, detail=str(e))
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/retraining/sessions")
 async def retraining_sessions():
     """Return active and completed retraining sessions."""
-    try: # BUGFIX: wrap scheduler call
+    try:
         return scheduler.get_all_sessions()
-    except Exception as e: # BUGFIX: return JSON error
-        raise HTTPException(status_code=500, detail=str(e))
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/api/retraining/auto-schedule")
 async def trigger_auto_schedule():
     """Manually trigger auto-scheduling of retraining from recent slashes."""
-    try: # BUGFIX: wrap scheduler call
+    try:
         auto_schedule_from_slashes()
         return {"message": "Auto-scheduling triggered", "sessions": scheduler.get_all_sessions()}
-    except Exception as e: # BUGFIX: return JSON error
-        raise HTTPException(status_code=500, detail=str(e))
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/api/registry")
 async def registry():
-    try: # BUGFIX: wrap registry call
+    try:
         return {"agents": get_full_registry()}
-    except Exception as e: # BUGFIX: return JSON error
-        raise HTTPException(status_code=500, detail=str(e))
+    except (RuntimeError, ValueError) as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # ---------------------------------------------------------------------------
@@ -444,8 +444,8 @@ async def websocket_endpoint(websocket: WebSocket):
             "timestamp": int(time.time()),
             "stakes": get_agent_stakes(),
         }))
-    except Exception as e: # BUGFIX: catch early disconnect
-        logger.warning(f"[WS] Failed to send initial state: {e}")
+    except (RuntimeError, WebSocketDisconnect) as e:
+        logger.warning("[WS] Failed to send initial state: %s", str(e))
         manager.disconnect(websocket)
         return
 
@@ -464,15 +464,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     "message": "Invalid JSON format",
                     "timestamp": int(time.time())
                 }))
-            except Exception as e: # BUGFIX: catch internal loop errors
-                logger.error(f"[WS] Message processing error: {e}")
+            except (RuntimeError, ValueError) as e:
+                logger.error("[WS] Message processing error: %s", str(e))
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-    except (RuntimeError, OSError) as e:
-        logger.error("[WS] Connection lost: %s", str(e))
-        manager.disconnect(websocket)
-    except Exception as e: # BUGFIX: catch-all for unknown WS issues to prevent server crash
-        logger.error("[WS] Fatal handler error: %s", str(e))
+    except (RuntimeError, OSError, ValueError) as e:
+        logger.error("[WS] Connection error: %s", str(e))
         manager.disconnect(websocket)
 
 

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "ignoreDeprecations": "6.0",
+    "target": "es2015",
     "lib": [
       "dom",
       "dom.iterable",
@@ -14,14 +15,12 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "types": ["node", "react", "react-dom"],
-    "baseUrl": ".",
-
     "paths": {
       "@/*": ["./src/*"]
     }
