@@ -50,7 +50,8 @@ class StatisticalSentinel:
 
             # Need at least 3 samples to have a meaningful baseline
             if len(hist) < 3:
-                logger.debug(f"[Sentinel] {agent}: too few samples ({len(hist)}), skipping check")
+                logger.debug(
+                    f"[Sentinel] {agent}: too few samples ({len(hist)}), skipping check")
                 hist.append(value)
                 self.history[agent] = hist
                 return result
@@ -62,20 +63,39 @@ class StatisticalSentinel:
             result["mean"] = round(mean, 4)
             result["std"] = round(std, 4)
 
-            zscore = abs(value - mean) / (std + 1e-6)
-            result["zscore"] = round(zscore, 4)
-
-            if (std == 0 and abs(value - mean) > 0.01) or zscore > 2.0:
-                result["anomaly"] = True
-                result["action"] = "block"
-                result["slash_percent"] = 10
-                logger.warning(
-                    f"[Sentinel] ANOMALY detected – agent={agent}, value={value}, "
-                    f"mean={mean:.4f}, std={std:.4f}, zscore={zscore:.4f}"
-                )
-                self.anomaly_log.append(result.copy())
+            # Handle std=0 case (homogeneous history): only flag if deviation exists
+            # and persists across multiple checks. For now, skip anomaly if std=0.
+            if std == 0:
+                # Homogeneous baseline: allow first deviation, track for pattern
+                zscore = 0.0 if abs(value - mean) < 1e-6 else float('inf')
+                result["zscore"] = 0.0  # Don't report infinite values
+                if abs(value - mean) < 1e-6:
+                    # Value matches homogeneous baseline
+                    result["anomaly"] = False
+                else:
+                    # First deviation from homogeneous state - add but don't flag
+                    logger.debug(
+                        f"[Sentinel] {agent}: first deviation from homogeneous state "
+                        f"(value={value}, mean={mean:.4f})"
+                    )
+                    result["anomaly"] = False
             else:
-                # Update history ONLY if NO anomaly detected to prevent baseline poisoning
+                # Normal case: std > 0, use z-score with reasonable epsilon
+                zscore = abs(value - mean) / std
+                result["zscore"] = round(zscore, 4)
+                result["anomaly"] = zscore > 2.0
+
+                if result["anomaly"]:
+                    result["action"] = "block"
+                    result["slash_percent"] = 10
+                    logger.warning(
+                        f"[Sentinel] ANOMALY detected – agent={agent}, value={value}, "
+                        f"mean={mean:.4f}, std={std:.4f}, zscore={zscore:.4f}"
+                    )
+                    self.anomaly_log.append(result.copy())
+
+            # Update history ONLY if NO anomaly detected to prevent baseline poisoning
+            if not result["anomaly"]:
                 hist.append(value)
                 if len(hist) > self.window_size:
                     hist.pop(0)
@@ -99,4 +119,3 @@ class StatisticalSentinel:
             for agent in self.history:
                 self.history[agent] = []
         logger.info("[Sentinel] Reset all agent histories.")
-

@@ -93,7 +93,8 @@ def morpheme_creator_node(state: dict[str, Any]) -> dict[str, Any]:
     """Assembles the Executable Morpheme-X from agent outputs and submits to HCS."""
     risk = state["risk"]
     trigger_payload = (
-        {"type": "PAYOUT", "amount": state["payout_amount"], "currency": "HCVR"}
+        {"type": "PAYOUT",
+            "amount": state["payout_amount"], "currency": "HCVR"}
         if state["insurance_trigger"]
         else {"type": "ALERT", "level": state["triage_decision"]}
     )
@@ -120,7 +121,8 @@ def morpheme_creator_node(state: dict[str, Any]) -> dict[str, Any]:
 
     # Submit to Hedera HCS (simulated)
     morpheme = submit_morpheme(morpheme)
-    logger.info(f"[MorphemeX] Created and submitted: tx={morpheme.get('hedera_tx_id')}")
+    logger.info(
+        f"[MorphemeX] Created and submitted: tx={morpheme.get('hedera_tx_id')}")
 
     events = state.get("events", [])
     events.append({"type": "morpheme_created", "morpheme": morpheme})
@@ -135,7 +137,6 @@ def morpheme_creator_node(state: dict[str, Any]) -> dict[str, Any]:
 def sentinel_node(state: dict[str, Any]) -> dict[str, Any]:
     """Meta-Sentinel anomaly detection across all agent outputs."""
     risk = state["risk"]
-    scenario = state.get("scenario", "normal")
     anomaly_override = state.get("anomaly_override")
 
     # Numeric signals monitored per agent
@@ -161,8 +162,9 @@ def sentinel_node(state: dict[str, Any]) -> dict[str, Any]:
 
         if report["anomaly"]:
             blocked = True
-            logger.warning(f"[Sentinel] Blocking action due to anomaly in {agent}")
-            
+            logger.warning(
+                f"[Sentinel] Blocking action due to anomaly in {agent}")
+
             reasoning = f"Sentinel → {agent} deviation {report['zscore']:.2f} > 2σ → ANOMALY BLOCKED"
             events.append({
                 "type": "sentinel_block",
@@ -175,10 +177,13 @@ def sentinel_node(state: dict[str, Any]) -> dict[str, Any]:
 
             # Slash stake
             slash_result = slash_agent_stake(agent, penalty_percent=10)
-            
-            # BUGFIX: Reset agent history after slashing so it starts with a clean baseline
-            sentinel.reset_agent(agent)
-            
+
+            # NOTE: Do NOT reset agent history here. Resetting after anomaly causes
+            # cascading false positives on next run as the agent starts from scratch.
+            # The baseline should persist to establish meaningful z-scores over time.
+            # History will naturally drift over the rolling window; reset only for
+            # scheduled retraining or explicit admin action.
+
             events.append({
                 "type": "agent_slash",
                 "agent": agent,
@@ -188,7 +193,7 @@ def sentinel_node(state: dict[str, Any]) -> dict[str, Any]:
             })
 
     logger.info(f"[Sentinel] Check complete. Blocked={blocked}")
-    
+
     if not blocked:
         events.append({
             "type": "sentinel_check",
@@ -216,8 +221,8 @@ def triage_node(state: dict[str, Any]) -> dict[str, Any]:
     events = state.get("events", [])
     reasoning = f"Triage ({state['risk']:.2f}) → {state['triage_decision']}"
     events.append({
-        "type": "agent_decision", 
-        "agent": "triage", 
+        "type": "agent_decision",
+        "agent": "triage",
         "decision": state["triage_decision"],
         "reasoning": reasoning,
         "timestamp": int(time.time())
@@ -231,8 +236,8 @@ def diagnosis_node(state: dict[str, Any]) -> dict[str, Any]:
     confidence = 0.85 + (state['risk'] * 0.1)  # Simulated confidence
     reasoning = f"Diagnosis → {state['diagnosis'][:60]}... ({confidence:.0%} confidence)"
     events.append({
-        "type": "agent_decision", 
-        "agent": "diagnosis", 
+        "type": "agent_decision",
+        "agent": "diagnosis",
         "decision": state["diagnosis"],
         "reasoning": reasoning,
         "confidence": confidence,
@@ -261,7 +266,7 @@ def finance_node(state: dict[str, Any]) -> dict[str, Any]:
     action = "PAYOUT" if state["insurance_trigger"] else "NO PAYOUT"
     reasoning = f"Finance → Risk {state['risk']:.2f} vs Threshold {threshold:.2f} → {action} {state['payout_amount']:.0f} HCVR"
     events.append({
-        "type": "payout_triggered" if state["insurance_trigger"] else "payout_declined", 
+        "type": "payout_triggered" if state["insurance_trigger"] else "payout_declined",
         "agent": "finance",
         "payout_amount": state["payout_amount"],
         "threshold": threshold,
@@ -318,10 +323,11 @@ def run_pipeline(
 
     try:
         with _pipeline_lock:
-            initial = make_initial_state(risk, scenario, anomaly_override, city)
+            initial = make_initial_state(
+                risk, scenario, anomaly_override, city)
             final = amx_graph.invoke(initial)
         return final
-    except Exception as e:
+    except (RuntimeError, ValueError, TypeError, KeyError) as e:
         logger.error(f"[Pipeline] Pipeline execution failed: {e}")
         return {
             "risk": risk,
