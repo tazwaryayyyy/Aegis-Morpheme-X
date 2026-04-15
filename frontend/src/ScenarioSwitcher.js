@@ -14,12 +14,26 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
       btnClass: 'btn-dhaka',
       tagColor: 'rgba(255,42,42,0.6)',
       // Map to real API call: high risk + anomaly to trigger sentinel
-      apiCall: () =>
-        fetch(`${API_BASE}/api/analyze`, {
+      apiCall: () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+        return fetch(`${API_BASE}/api/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ risk: 0.92, scenario: 'anomaly' }),
-        }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }), // BUGFIX: handle fetch error
+          signal: controller.signal,
+        })
+          .then(r => {
+            clearTimeout(timeoutId);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          })
+          .catch(err => {
+            clearTimeout(timeoutId);
+            throw err;
+          });
+      },
     },
     {
       id: 'nairobi_vector',
@@ -29,12 +43,26 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
       btnClass: 'btn-nairobi',
       tagColor: 'rgba(255,98,0,0.6)',
       // High risk normal — triggers epidemiology + genomic hire
-      apiCall: () =>
-        fetch(`${API_BASE}/api/analyze`, {
+      apiCall: () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        return fetch(`${API_BASE}/api/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ risk: 0.78, scenario: 'normal' }),
-        }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }), // BUGFIX: handle fetch error
+          signal: controller.signal,
+        })
+          .then(r => {
+            clearTimeout(timeoutId);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          })
+          .catch(err => {
+            clearTimeout(timeoutId);
+            throw err;
+          });
+      },
     },
     {
       id: 'singapore_norm',
@@ -44,12 +72,26 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
       btnClass: 'btn-sgp',
       tagColor: 'rgba(200,255,0,0.6)',
       // Low-medium risk normal
-      apiCall: () =>
-        fetch(`${API_BASE}/api/analyze`, {
+      apiCall: () => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
+        return fetch(`${API_BASE}/api/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ risk: 0.35, scenario: 'normal' }),
-        }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); }), // BUGFIX: handle fetch error
+          signal: controller.signal,
+        })
+          .then(r => {
+            clearTimeout(timeoutId);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          })
+          .catch(err => {
+            clearTimeout(timeoutId);
+            throw err;
+          });
+      },
     },
   ];
 
@@ -57,11 +99,14 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
     if (disabled) return;
     setActive(scenario.id);
     try {
-      await scenario.apiCall();
-      if (onScenarioExecute) onScenarioExecute(scenario.id);
+      const response = await scenario.apiCall();
+      // Pass the actual response to the parent component
+      if (onScenarioExecute) onScenarioExecute(scenario.id, response);
     } catch (err) {
-      console.error('[ScenarioSwitcher] Failed to trigger scenario:', err); // BUGFIX: log errors properly
-      alert(`Simulation Error: ${err.message}`); // BUGFIX: give user feedback on failure
+      console.error('[ScenarioSwitcher] Failed to trigger scenario:', err);
+      // More detailed error message for debugging
+      const errorMsg = err?.message || 'Unknown error occurred';
+      alert(`Simulation Error: ${errorMsg}`);
     } finally {
       // Keep button highlighted briefly, then reset
       setTimeout(() => setActive(null), 3000);
