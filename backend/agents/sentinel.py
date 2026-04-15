@@ -58,14 +58,16 @@ class StatisticalSentinel:
                     result["slash_percent"] = 10
                     result["zscore"] = float('inf')
                     logger.warning(
-                        f"[Sentinel] EXTREME VALUE DETECTED – agent={agent}, value={value} "
-                        f"(insufficient history but value is extreme)"
+                        "[Sentinel] EXTREME VALUE DETECTED – agent=%s, value=%s "
+                        "(insufficient history but value is extreme)",
+                        agent, value
                     )
                     self.anomaly_log.append(result.copy())
                     return result
 
                 logger.debug(
-                    f"[Sentinel] {agent}: too few samples ({len(hist)}), deferring check")
+                    "[Sentinel] %s: too few samples (%s), deferring check",
+                    agent, len(hist))
                 hist.append(value)
                 self.history[agent] = hist
                 return result
@@ -92,8 +94,9 @@ class StatisticalSentinel:
                     result["action"] = "block"
                     result["slash_percent"] = 10
                     logger.warning(
-                        f"[Sentinel] ANOMALY detected – agent={agent}, value={value}, "
-                        f"mean={mean:.4f}, std=0 (homogeneous), ratio_zscore={zscore:.4f}"
+                        "[Sentinel] ANOMALY detected – agent=%s, value=%s, "
+                        "mean=%.4f, std=0 (homogeneous), ratio_zscore=%.4f",
+                        agent, value, mean, zscore
                     )
                     self.anomaly_log.append(result.copy())
                 else:
@@ -101,8 +104,9 @@ class StatisticalSentinel:
                     result["anomaly"] = False
                     if abs(value - mean) > 1e-6:
                         logger.debug(
-                            f"[Sentinel] {agent}: deviation from homogeneous baseline "
-                            f"(value={value}, mean={mean:.4f}, ratio={zscore:.2f}x)"
+                            "[Sentinel] %s: deviation from homogeneous baseline "
+                            "(value=%s, mean=%.4f, ratio=%.2fx)",
+                            agent, value, mean, zscore
                         )
             else:
                 # Normal case: std > 0, use standard z-score
@@ -114,8 +118,9 @@ class StatisticalSentinel:
                     result["action"] = "block"
                     result["slash_percent"] = 10
                     logger.warning(
-                        f"[Sentinel] ANOMALY detected – agent={agent}, value={value}, "
-                        f"mean={mean:.4f}, std={std:.4f}, zscore={zscore:.4f}"
+                        "[Sentinel] ANOMALY detected – agent=%s, value=%s, "
+                        "mean=%.4f, std=%.4f, zscore=%.4f",
+                        agent, value, mean, std, zscore
                     )
                     self.anomaly_log.append(result.copy())
 
@@ -153,7 +158,7 @@ class StatisticalSentinel:
         with self._lock:
             if agent in self.history:
                 self.history[agent] = []
-                logger.info(f"[Sentinel] Reset history for agent: {agent}")
+                logger.info("[Sentinel] Reset history for agent: %s", agent)
 
     def reset_all(self):
         """Reset all agent histories (used for tests)."""

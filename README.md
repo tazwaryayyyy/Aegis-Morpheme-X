@@ -128,7 +128,31 @@ graph TD
 
 ---
 
-## 🔗 Author
+## �️ Sentinel Anomaly Detection Fixes
+
+The Meta-Sentinel statistical anomaly detector has been hardened against three critical edge cases:
+
+### Bug #1: Infinite Z-Score from Homogeneous History
+**Problem**: When baseline history is uniform (e.g., all risk scores are URGENT), std=0 caused division-by-zero and infinite z-scores, triggering false alarms on any deviation.  
+**Solution**: Ratio-based detection for homogeneous baselines. Flags anomalies only when relative change >3x AND absolute change >0.1.
+
+### Bug #2: Baseline Poisoning from New Values
+**Problem**: New values were added to history before validation, contaminating statistical baselines and producing incorrect z-scores.  
+**Solution**: Compute statistics on existing history only; only add successfully-validated values to history.
+
+### Bug #3: Cascading False Positives from History Resets
+**Problem**: History was reset after each anomaly detection, causing the next run to immediately deviate from a fresh but incomplete baseline.  
+**Solution**: Preserve history through rolling window decay. Reset only for scheduled retraining or explicit admin action.
+
+### Bug #4: Extreme Values Undetected on Cold Start
+**Problem**: On fresh Render deployments, agents had <3 history samples so extreme values (finance=9999) skipped validation.  
+**Solution**: Domain-specific extreme value thresholds bypass history requirements: finance>1000, triage>2.0, diagnosis>1.5, epidemiology>2.0.
+
+**Result**: Eliminated false positives while maintaining robust detection of rogue agent outputs across deployment lifecycle.
+
+---
+
+## �🔗 Author
 **Tazwar Ahnaf**  
 [GitHub](https://github.com/tazwaryayyyy) · [X](https://x.com/TazwarEnan)
 

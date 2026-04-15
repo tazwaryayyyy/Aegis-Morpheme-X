@@ -10,9 +10,8 @@ import json
 import logging
 import time
 from typing import Any, List, Optional
-from typing_extensions import TypedDict, Annotated
+from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, END
-from langgraph.graph.message import add_messages
 
 from agents.triage import triage_agent
 from agents.diagnosis import diagnosis_agent
@@ -122,7 +121,7 @@ def morpheme_creator_node(state: dict[str, Any]) -> dict[str, Any]:
     # Submit to Hedera HCS (simulated)
     morpheme = submit_morpheme(morpheme)
     logger.info(
-        f"[MorphemeX] Created and submitted: tx={morpheme.get('hedera_tx_id')}")
+        "[MorphemeX] Created and submitted: tx=%s", morpheme.get('hedera_tx_id'))
 
     events = state.get("events", [])
     events.append({"type": "morpheme_created", "morpheme": morpheme})
@@ -163,7 +162,7 @@ def sentinel_node(state: dict[str, Any]) -> dict[str, Any]:
         if report["anomaly"]:
             blocked = True
             logger.warning(
-                f"[Sentinel] Blocking action due to anomaly in {agent}")
+                "[Sentinel] Blocking action due to anomaly in %s", agent)
 
             reasoning = f"Sentinel → {agent} deviation {report['zscore']:.2f} > 2σ → ANOMALY BLOCKED"
             events.append({
@@ -192,7 +191,7 @@ def sentinel_node(state: dict[str, Any]) -> dict[str, Any]:
                 "timestamp": int(time.time())
             })
 
-    logger.info(f"[Sentinel] Check complete. Blocked={blocked}")
+    logger.info("[Sentinel] Check complete. Blocked=%s", blocked)
 
     if not blocked:
         events.append({
@@ -328,7 +327,7 @@ def run_pipeline(
             final = amx_graph.invoke(initial)
         return final
     except (RuntimeError, ValueError, TypeError, KeyError) as e:
-        logger.error(f"[Pipeline] Pipeline execution failed: {e}")
+        logger.error("[Pipeline] Pipeline execution failed: %s", e)
         return {
             "risk": risk,
             "scenario": scenario,
