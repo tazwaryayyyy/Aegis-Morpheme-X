@@ -54,7 +54,7 @@ logger = logging.getLogger("amx.main")
 
 async def broadcast_retraining_update(session_id: str, session_data: dict):
     """Broadcast retraining progress to all WebSocket clients."""
-    try: # BUGFIX: catch broadcast errors
+    try:  # BUGFIX: catch broadcast errors
         await manager.broadcast({
             "type": "retraining_update",
             "session_id": session_id,
@@ -90,7 +90,7 @@ class ConnectionManager:
                 if isinstance(e, (RuntimeError, OSError)):
                     logger.error("[WS] Broadcast error: %s", str(e))
                 dead.append(ws)
-                
+
         # Safely remove dead connections
         for ws in dead:
             if ws in self.active:
@@ -107,7 +107,7 @@ manager = ConnectionManager()
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pylint: disable=unused-argument,redefined-outer-name
     logger.info("AMX Protocol backend starting…")
-    try: # BUGFIX: ensure scheduler start doesn't crash app
+    try:  # BUGFIX: ensure scheduler start doesn't crash app
         # Start auto-scheduling retraining from existing slashes
         auto_schedule_from_slashes()
     except (RuntimeError, OSError) as e:
@@ -175,8 +175,10 @@ class AnalyzeResponse(BaseModel):
 
 
 class CoughSimulationRequest(BaseModel):
-    scenario: str = Field("normal", description="Scenario: normal | anomaly | low_risk | medium_risk")
-    features: Optional[List[float]] = Field(None, description="13 MFCC coefficients")
+    scenario: str = Field(
+        "normal", description="Scenario: normal | anomaly | low_risk | medium_risk")
+    features: Optional[List[float]] = Field(
+        None, description="13 MFCC coefficients")
 
 
 # ---------------------------------------------------------------------------
@@ -186,7 +188,7 @@ class CoughSimulationRequest(BaseModel):
 @app.get("/api/city/current")
 async def get_current_city_endpoint():
     """Get the currently active city configuration."""
-    try: # BUGFIX: handle city config errors
+    try:  # BUGFIX: handle city config errors
         city = get_current_city()
         city_info = set_current_city(city)  # This returns full config
         return CityResponse(
@@ -279,7 +281,7 @@ async def analyze(req: AnalyzeRequest):
     logger.info("[API] /analyze – risk=%.3f, scenario=%s",
                 req.risk, req.scenario)
 
-    try: # BUGFIX: wrap pipeline triggers
+    try:  # BUGFIX: wrap pipeline triggers
         # Broadcast risk_received event immediately
         await manager.broadcast({
             "type": "risk_received",
@@ -305,7 +307,7 @@ async def analyze(req: AnalyzeRequest):
 
         # Trigger HCVR payout if insurance activated
         if final_state.get("insurance_trigger") and not final_state.get("blocked"):
-            try: # BUGFIX: protect HTS call
+            try:  # BUGFIX: protect HTS call
                 payout = trigger_hcvr_payout(
                     amount=final_state["payout_amount"],
                     recipient=req.patient_id or "patient-0.0.9999999"
@@ -333,7 +335,7 @@ async def analyze(req: AnalyzeRequest):
 @app.post("/api/analyze/anomaly")
 async def analyze_anomaly():
     """Demo endpoint: forces an anomaly scenario with a suspicious risk value."""
-    try: # BUGFIX: wrap demo call
+    try:  # BUGFIX: wrap demo call
         req = AnalyzeRequest(risk=0.9, scenario="anomaly")
         return await analyze(req)
     except (RuntimeError, ValueError) as e:
@@ -347,7 +349,7 @@ async def simulate_cough(req: CoughSimulationRequest):
     If 'features' are provided, uses the real scikit-learn model.
     If 'features' are missing, simulates them based on 'scenario'.
     """
-    try: # BUGFIX: wrap simulation call
+    try:  # BUGFIX: wrap simulation call
         scenario = req.scenario
         mfccs = req.features
 
@@ -356,7 +358,7 @@ async def simulate_cough(req: CoughSimulationRequest):
             if scenario == "anomaly":
                 # High risk pattern
                 mfccs = [25.0 + random.uniform(-2, 2) for _ in range(13)]
-                mfccs[0] += 10.0 # High energy
+                mfccs[0] += 10.0  # High energy
             elif scenario == "low_risk":
                 mfccs = [10.0 + random.uniform(-1, 1) for _ in range(13)]
             elif scenario == "medium_risk":
@@ -370,7 +372,8 @@ async def simulate_cough(req: CoughSimulationRequest):
         # Get real risk score from the TinyML model
         risk = tinyml_engine.predict_risk(mfccs)
 
-        logger.info("[TinyML] Prediction: risk=%.3f using features: %s", risk, mfccs[:3])
+        logger.info(
+            "[TinyML] Prediction: risk=%.3f using features: %s", risk, mfccs[:3])
 
         analyze_req = AnalyzeRequest(risk=risk, scenario=scenario)
         return await analyze(analyze_req)
@@ -437,7 +440,7 @@ async def registry():
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     # Send initial state on connection
-    try: # BUGFIX: protect initial state send
+    try:  # BUGFIX: protect initial state send
         await websocket.send_text(json.dumps({
             "type": "connected",
             "message": "AMX Protocol WebSocket active",

@@ -75,7 +75,7 @@ const ScenarioSwitcher = ({ onScenarioExecute, disabled }) => {
       apiCall: () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
-        
+
         return fetch(`${API_BASE}/api/analyze`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
