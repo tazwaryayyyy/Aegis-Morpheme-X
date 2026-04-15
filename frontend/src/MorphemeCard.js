@@ -28,9 +28,14 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
   const handleVerify = () => {
     if (loading) return;
     setLoading(true);
-    
+
     setTimeout(() => {
-      window.open(morpheme.explorer_url, '_blank');
+      // BUGFIX: If TX is simulated, link to HCS topic page instead
+      let url = morpheme.explorer_url;
+      if (morpheme.hedera_tx_id && morpheme.hedera_tx_id.startsWith('SIMULATED_')) {
+        url = 'https://hashscan.io/testnet/topic/0.0.4982301';
+      }
+      window.open(url, '_blank');
       setLoading(false);
       if (typeof onVerify === 'function') onVerify();
     }, 1500);
@@ -51,7 +56,7 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
           animation: oh-spin 0.6s linear infinite;
         }
       `}</style>
-      
+
       {/* Dynamic Header */}
       {morpheme ? (
         <div style={{
@@ -90,7 +95,7 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
               <span className="dense-label">TX_HASH</span>
               {morpheme?.explorer_url ? (
                 <span className="dense-val text-cyan" style={{ fontSize: 10 }}>
-                   {(morpheme?.hedera_tx_id || '0.0.0@0.0').slice(0, 20)}...
+                  {(morpheme?.hedera_tx_id || '0.0.0@0.0').slice(0, 20)}...
                 </span>
               ) : (
                 <span className="dense-val text-cyan" style={{ fontSize: 10 }}>
