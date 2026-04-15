@@ -63,24 +63,35 @@ class StatisticalSentinel:
             result["mean"] = round(mean, 4)
             result["std"] = round(std, 4)
 
-            # Handle std=0 case (homogeneous history): only flag if deviation exists
-            # and persists across multiple checks. For now, skip anomaly if std=0.
+            # Handle std=0 case (homogeneous history)
             if std == 0:
-                # Homogeneous baseline: allow first deviation, track for pattern
-                zscore = 0.0 if abs(value - mean) < 1e-6 else float('inf')
-                result["zscore"] = 0.0  # Don't report infinite values
-                if abs(value - mean) < 1e-6:
-                    # Value matches homogeneous baseline
-                    result["anomaly"] = False
-                else:
-                    # First deviation from homogeneous state - add but don't flag
-                    logger.debug(
-                        f"[Sentinel] {agent}: first deviation from homogeneous state "
-                        f"(value={value}, mean={mean:.4f})"
+                # Homogeneous baseline: check for extreme deviations using ratio test
+                zscore = abs(value - mean) / (abs(mean) +
+                                              1e-6)  # Relative deviation
+                result["zscore"] = round(zscore, 4)
+
+                # Flag as anomalous if: (1) absolute deviation > 0.1 AND
+                # (2) relative deviation > 3.0 (value differs by >3x from baseline)
+                # This allows small noise but catches rogue outputs like 50 → 9999
+                if abs(value - mean) > 0.1 and zscore > 3.0:
+                    result["anomaly"] = True
+                    result["action"] = "block"
+                    result["slash_percent"] = 10
+                    logger.warning(
+                        f"[Sentinel] ANOMALY detected – agent={agent}, value={value}, "
+                        f"mean={mean:.4f}, std=0 (homogeneous), ratio_zscore={zscore:.4f}"
                     )
+                    self.anomaly_log.append(result.copy())
+                else:
+                    # Minor deviation from homogeneous state - track but don't flag yet
                     result["anomaly"] = False
+                    if abs(value - mean) > 1e-6:
+                        logger.debug(
+                            f"[Sentinel] {agent}: deviation from homogeneous baseline "
+                            f"(value={value}, mean={mean:.4f}, ratio={zscore:.2f}x)"
+                        )
             else:
-                # Normal case: std > 0, use z-score with reasonable epsilon
+                # Normal case: std > 0, use standard z-score
                 zscore = abs(value - mean) / std
                 result["zscore"] = round(zscore, 4)
                 result["anomaly"] = zscore > 2.0
