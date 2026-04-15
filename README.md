@@ -63,6 +63,37 @@ npm start
 
 ---
 
+## ⚙️ Environment Variables
+
+### Minimum Configuration (Demo Mode)
+To run the project locally **without any Hedera setup**:
+
+```bash
+# backend/.env
+SIMULATE_HCS=true
+OPENWEATHER_API_KEY=<your_openweather_api_key>
+```
+
+This is sufficient to run the full pipeline with simulated Hedera transactions. **Perfect for judges who want to see the system in 5 minutes with zero onboarding.**
+
+### Live Hedera Configuration
+For production deployment with real Hedera transactions:
+
+```bash
+# backend/.env
+SIMULATE_HCS=false
+HEDERA_NETWORK=testnet
+HEDERA_ACCOUNT_ID=0.0.8474749
+HEDERA_PRIVATE_KEY=<your_hedera_private_key>
+HCS_TOPIC_ID=0.0.8661273
+HCS_SENTINEL_TOPIC_ID=0.0.8661274
+OPENWEATHER_API_KEY=<your_openweather_api_key>
+```
+
+The Render backend may take **30-60 seconds to wake** from cold start on the Hedera testnet.
+
+---
+
 ## 🚀 Production Deployment (Vercel + Render)
 
 ### Vercel Frontend Setup

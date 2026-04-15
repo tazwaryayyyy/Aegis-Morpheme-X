@@ -20,7 +20,12 @@ const getWsUrl = () => {
 
 const WS_URL = getWsUrl();
 const RECONNECT_INTERVAL = 3000;
-const MAX_RECONNECT = 100;
+const MAX_RECONNECT = 5;  // BUGFIX: Reduced from 100 to 5 retries
+
+// BUGFIX: Calculate exponential backoff delay (3s, 6s, 12s, 24s, 48s)
+const getReconnectDelay = (attemptNumber) => {
+  return Math.min(RECONNECT_INTERVAL * Math.pow(2, attemptNumber - 1), 48000);
+};
 
 export function useAMXWebSocket(onEvent) {
   const wsRef = useRef(null);
@@ -85,7 +90,12 @@ export function useAMXWebSocket(onEvent) {
 
         if (isMounted.current && reconnectCount.current < MAX_RECONNECT) {
           reconnectCount.current += 1;
-          reconnectTimer.current = setTimeout(connect, RECONNECT_INTERVAL); // BUGFIX: 3s reconnect
+          // BUGFIX: Use exponential backoff for reconnect delays
+          const delay = getReconnectDelay(reconnectCount.current);
+          console.log(`[AMX WS] Reconnect attempt ${reconnectCount.current}/${MAX_RECONNECT} in ${delay / 1000}s`);
+          reconnectTimer.current = setTimeout(connect, delay);
+        } else if (isMounted.current && reconnectCount.current >= MAX_RECONNECT) {
+          console.log('[AMX WS] Max reconnection attempts reached. Giving up.');
         }
       };
 

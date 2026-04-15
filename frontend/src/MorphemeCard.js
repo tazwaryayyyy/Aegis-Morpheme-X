@@ -26,16 +26,11 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
   }, [morpheme, isNew]);
 
   const handleVerify = () => {
-    if (loading) return;
+    if (loading || !morpheme.explorer_url) return;  // BUGFIX: Check explorer_url exists
     setLoading(true);
 
     setTimeout(() => {
-      // Use the real explorer URL (for live transactions) or fallback to topic page
-      let url = morpheme.explorer_url;
-      if (morpheme.hedera_tx_id && morpheme.hedera_tx_id.startsWith('SIMULATED_')) {
-        url = 'https://hashscan.io/testnet/topic/0.0.8661273';  // Real HCS topic ID
-      }
-      window.open(url, '_blank');
+      window.open(morpheme.explorer_url, '_blank');
       setLoading(false);
       if (typeof onVerify === 'function') onVerify();
     }, 1500);
@@ -166,8 +161,8 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
         </div>
       )}
 
-      {/* BUGFIX: Upgrade 3 - HashScan Prominence Button */}
-      {morpheme && (
+      {/* BUGFIX: Only show verify button for REAL transactions with valid explorer URLs */}
+      {morpheme && morpheme.explorer_url && !morpheme.hedera_tx_id?.startsWith('SIMULATED_') && (
         <div style={{ padding: '0 20px 20px' }}>
           <button
             className="magnetic-btn"
@@ -216,6 +211,42 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
               </>
             )}
           </button>
+        </div>
+      )}
+
+      {/* BUGFIX: Show simulation label when tx is simulated */}
+      {morpheme && morpheme.hedera_tx_id?.startsWith('SIMULATED_') && (
+        <div style={{ padding: '0 20px 20px' }}>
+          <div style={{
+            width: '100%',
+            padding: '14px',
+            textAlign: 'center',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            color: 'rgba(170, 255, 0, 0.4)',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase'
+          }}>
+            [SIMULATION MODE — no on-chain record]
+          </div>
+        </div>
+      )}
+
+      {/* BUGFIX: Show fallback label when submission failed */}
+      {morpheme && morpheme.fallback && !morpheme.hedera_tx_id?.startsWith('SIMULATED_') && (
+        <div style={{ padding: '0 20px 20px' }}>
+          <div style={{
+            width: '100%',
+            padding: '14px',
+            textAlign: 'center',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            color: 'rgba(255, 100, 100, 0.6)',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase'
+          }}>
+            [FALLBACK MODE — Hedera unavailable]
+          </div>
         </div>
       )}
     </div>

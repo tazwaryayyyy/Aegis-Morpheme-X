@@ -17,6 +17,8 @@ import uuid
 logger = logging.getLogger("amx.hedera.hcs")
 
 # Load from .env (optional – falls back to simulation)
+
+
 def get_hcs_config():
     """Get dynamic configuration from environment variables."""
     return {
@@ -51,7 +53,7 @@ def _generate_consensus_timestamp() -> str:
 def submit_morpheme(morpheme: dict) -> dict:
     """
     Submit an Executable Morpheme-X to Hedera HCS.
-    
+
     Simulated mode: Generates realistic tx IDs and explorer links.
     Production mode: Use hedera-sdk-py TopicMessageSubmitTransaction.
     """
@@ -59,7 +61,7 @@ def submit_morpheme(morpheme: dict) -> dict:
     message_hash = hashlib.sha256(message_bytes).hexdigest()[:16]
 
     config = get_hcs_config()
-    
+
     if config["simulate"]:
         # Simulate network latency (≈0.3s instead of real 3s for demo speed)
         time.sleep(0.3)
@@ -88,7 +90,7 @@ def submit_morpheme(morpheme: dict) -> dict:
             )
         except ImportError as e:
             logger.error(f"[HCS] Failed to import hedera SDK: {e}")
-            # Fallback to simulation mode immediately
+            # BUGFIX: Fallback to simulation without generating broken explorer URLs
             fallback_tx_id = f"FALLBACK_{_generate_tx_id()}"
             morpheme["hedera_tx_id"] = fallback_tx_id
             morpheme["hedera_topic_id"] = config["topic_id"]
@@ -97,14 +99,14 @@ def submit_morpheme(morpheme: dict) -> dict:
             morpheme["confirmed"] = False
             morpheme["fallback"] = True
             morpheme["error"] = f"SDK Import Error: {str(e)}"
-            morpheme["explorer_url"] = (
-                f"https://hashscan.io/{config['network']}/transaction/{fallback_tx_id.replace('FALLBACK_', '')}"
-            )
+            # BUGFIX: No broken links in fallback mode
+            morpheme["explorer_url"] = None
             return morpheme
-            
+
         try:
             operator_id = AccountId.fromString(os.getenv("HEDERA_ACCOUNT_ID"))
-            operator_key = PrivateKey.fromString(os.getenv("HEDERA_PRIVATE_KEY"))
+            operator_key = PrivateKey.fromString(
+                os.getenv("HEDERA_PRIVATE_KEY"))
             client = Client.forTestnet()
             client.setOperator(operator_id, operator_key)
 
@@ -125,9 +127,11 @@ def submit_morpheme(morpheme: dict) -> dict:
             morpheme["explorer_url"] = (
                 f"https://hashscan.io/{config['network']}/transaction/{morpheme['hedera_tx_id']}"
             )
-            logger.info(f"[HCS] Morpheme submitted (live): tx={morpheme['hedera_tx_id']}")
+            logger.info(
+                f"[HCS] Morpheme submitted (live): tx={morpheme['hedera_tx_id']}")
         except Exception as e:
-            logger.error(f"[HCS] Real submission failed, falling back to simulation: {e}")
+            logger.error(
+                f"[HCS] Real submission failed, falling back to simulation: {e}")
             fallback_tx_id = f"FALLBACK_{_generate_tx_id()}"
             morpheme["hedera_tx_id"] = fallback_tx_id
             morpheme["hedera_topic_id"] = config["topic_id"]
@@ -136,10 +140,10 @@ def submit_morpheme(morpheme: dict) -> dict:
             morpheme["confirmed"] = False
             morpheme["fallback"] = True
             morpheme["error"] = str(e)
-            morpheme["explorer_url"] = (
-                f"https://hashscan.io/{config['network']}/transaction/{fallback_tx_id.replace('FALLBACK_', '')}"
-            )
-            logger.warning(f"[HCS] Using fallback transaction: {fallback_tx_id}")
+            # BUGFIX: No broken links in fallback mode
+            morpheme["explorer_url"] = None
+            logger.warning(
+                f"[HCS] Using fallback transaction: {fallback_tx_id}")
 
     return morpheme
 
@@ -147,5 +151,6 @@ def submit_morpheme(morpheme: dict) -> dict:
 def submit_sentinel_log(log: dict) -> str:
     """Submit a sentinel anomaly log to the dedicated HCS topic."""
     tx_id = _generate_tx_id()
-    logger.info(f"[HCS] Sentinel log submitted: tx={tx_id}, agent={log.get('agent')}")
+    logger.info(
+        f"[HCS] Sentinel log submitted: tx={tx_id}, agent={log.get('agent')}")
     return tx_id

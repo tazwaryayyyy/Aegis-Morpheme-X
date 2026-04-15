@@ -107,6 +107,27 @@ manager = ConnectionManager()
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pylint: disable=unused-argument,redefined-outer-name
     logger.info("AMX Protocol backend starting…")
+
+    # BUGFIX: Validate Hedera credentials if live mode is enabled
+    simulate_hcs = os.getenv("SIMULATE_HCS", "true").lower() == "true"
+    if not simulate_hcs:
+        required_env_vars = [
+            "HEDERA_ACCOUNT_ID",
+            "HEDERA_PRIVATE_KEY",
+            "HCS_TOPIC_ID",
+            "HCS_SENTINEL_TOPIC_ID"
+        ]
+        missing = [var for var in required_env_vars if not os.getenv(var)]
+        if missing:
+            logger.error(
+                "[Main] SIMULATE_HCS=false but missing credentials: %s. "
+                "Either set these env vars or set SIMULATE_HCS=true",
+                ", ".join(missing)
+            )
+            # BUGFIX: Still allow startup but log warning for visibility
+            logger.warning(
+                "[Main] Falling back to simulation mode due to missing credentials")
+
     try:  # BUGFIX: ensure scheduler start doesn't crash app
         # Start auto-scheduling retraining from existing slashes
         auto_schedule_from_slashes()
