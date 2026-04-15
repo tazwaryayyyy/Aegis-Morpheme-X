@@ -9,7 +9,7 @@ import { useAMXWebSocket } from './websocket';
 import Toast from './Toast';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-const MAX_EVENTS = 80;
+const MAX_EVENTS = 25;  // BUGFIX: Reduced from 80 to keep stream readable after 2-3 simulations
 
 function eventMeta(ev) {
   // BUGFIX: Guard against undefined/null event
@@ -17,7 +17,7 @@ function eventMeta(ev) {
 
   let isAnomaly = false;
   let isAcid = false;
-  
+
   if (['sentinel_block', 'agent_slash'].includes(ev.type)) isAnomaly = true;
   if (['payout_triggered', 'hcvr_payout', 'risk_received'].includes(ev.type)) isAcid = true;
   if (ev.decision?.includes('positive')) isAcid = true;
@@ -53,24 +53,24 @@ function eventMeta(ev) {
 }
 
 const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => {
-  const [risk, setRisk]                   = useState(null);
-  const [triage, setTriage]               = useState(null);
-  const [diagnosis, setDiagnosis]         = useState(null);
+  const [risk, setRisk] = useState(null);
+  const [triage, setTriage] = useState(null);
+  const [diagnosis, setDiagnosis] = useState(null);
   const [sentinelAlert, setSentinelAlert] = useState(false);
-  const [sentinelMsg, setSentinelMsg]     = useState('SYSTEM NOMINAL');
-  const [payout, setPayout]               = useState(null);
-  const [outbreakRisk, setOutbreakRisk]   = useState(null);
-  const [genomicHire, setGenomicHire]     = useState(null);
-  const [stakes, setStakes]               = useState({ triage: 2500, diagnosis: 2500, finance: 2500, epidemiology: 2500 });
-  const [slashLog, setSlashLog]           = useState([]);
-  const [currentCity, setCurrentCity]     = useState('Dhaka');
-  const [cityConfig, setCityConfig]       = useState(null);
-  const [morpheme, setMorpheme]           = useState(null);
-  const [morphemeNew, setMorphemeNew]     = useState(false);
-  const [runCount, setRunCount]           = useState(0);
-  const [events, setEvents]               = useState(externalEvents || []);
+  const [sentinelMsg, setSentinelMsg] = useState('SYSTEM NOMINAL');
+  const [payout, setPayout] = useState(null);
+  const [outbreakRisk, setOutbreakRisk] = useState(null);
+  const [genomicHire, setGenomicHire] = useState(null);
+  const [stakes, setStakes] = useState({ triage: 2500, diagnosis: 2500, finance: 2500, epidemiology: 2500 });
+  const [slashLog, setSlashLog] = useState([]);
+  const [currentCity, setCurrentCity] = useState('Dhaka');
+  const [cityConfig, setCityConfig] = useState(null);
+  const [morpheme, setMorpheme] = useState(null);
+  const [morphemeNew, setMorphemeNew] = useState(false);
+  const [runCount, setRunCount] = useState(0);
+  const [events, setEvents] = useState(externalEvents || []);
   const [showVerifyToast, setShowVerifyToast] = useState(false);
-  
+
   const feedRef = useRef(null);
   const isMounted = useRef(true); // BUGFIX: mount tracking
 
@@ -85,7 +85,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
 
   const refreshStakes = useCallback(async () => {
     try {
-      const res  = await fetch(`${API_BASE}/api/agents/stakes`);
+      const res = await fetch(`${API_BASE}/api/agents/stakes`);
       if (!res.ok) return; // BUGFIX: check response ok
       const data = await res.json();
       if (isMounted.current && data && data.stakes) { // BUGFIX: mount check & null check
@@ -126,7 +126,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
         setRunCount(prev => prev + 1);
         break;
       case 'agent_decision':
-        if (ev.agent === 'triage')    setTriage(ev.decision);
+        if (ev.agent === 'triage') setTriage(ev.decision);
         if (ev.agent === 'diagnosis') setDiagnosis(ev.decision);
         break;
       case 'morpheme_created':
@@ -151,7 +151,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
       default:
         break;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrollFeed, refreshStakes, setExternalEvents]);
 
   useAMXWebSocket(handleEvent);
@@ -169,7 +169,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
       <div id="dashboard-start" style={{ scrollMarginTop: '60px' }}></div>
 
       <ImpactDashboard events={events} stakes={stakes} />
-      
+
       <div className="dashboard-grid">
 
         <div className="col-3 gap-stack">
@@ -233,22 +233,53 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
           <div className="dashboard-card card">
             <div className="card-header">
               <div className="card-title">[SYS] Event Stream</div>
-              <span className="agent-badge badge-active">{events.length} LOGS</span>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span className="agent-badge badge-active">{events.length} LOGS</span>
+                {/* BUGFIX: Add clear button to manage event stream overflow */}
+                {events.length > 0 && (
+                  <button
+                    onClick={() => setEvents([])}
+                    style={{
+                      padding: '4px 12px',
+                      fontSize: '9px',
+                      fontFamily: 'var(--font-mono)',
+                      background: 'rgba(255, 100, 100, 0.1)',
+                      border: '1px solid rgba(255, 100, 100, 0.3)',
+                      color: 'rgba(255, 100, 100, 0.8)',
+                      cursor: 'pointer',
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      transition: 'all 0.2s',
+                      borderRadius: '2px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = 'rgba(255, 100, 100, 0.2)';
+                      e.target.style.borderColor = 'rgba(255, 100, 100, 0.5)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = 'rgba(255, 100, 100, 0.1)';
+                      e.target.style.borderColor = 'rgba(255, 100, 100, 0.3)';
+                    }}
+                  >
+                    CLEAR
+                  </button>
+                )}
+              </div>
             </div>
             <div className="event-feed" ref={feedRef}>
               {events.length === 0 ? (
                 <div style={{ padding: '24px 4px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
-                   {'>'} AWAITING DATA...
+                  {'>'} AWAITING DATA...
                 </div>
               ) : (
                 events.map((ev, i) => {
                   const m = eventMeta(ev);
                   const isNew = i === 0 && events.length > 1; // Basic trigger for scanline
-                  
+
                   let labelCol = 'var(--text-secondary)';
                   let iconCol = 'var(--cyan)';
                   let detailCol = 'var(--text-muted)';
-                  
+
                   if (m.isAnomaly) {
                     labelCol = 'var(--orange)'; iconCol = 'var(--orange)'; detailCol = 'var(--orange)';
                   } else if (m.isAcid) {
@@ -271,15 +302,15 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
           </div>
 
           <div className="dashboard-card card">
-            <MorphemeCard 
-              morpheme={morpheme} 
-              isNew={morphemeNew} 
+            <MorphemeCard
+              morpheme={morpheme}
+              isNew={morphemeNew}
               onVerify={() => setShowVerifyToast(true)}
             />
           </div>
 
           <div className={`dashboard-card card ${sentinelAlert ? 'anomaly-card' : ''}`}>
-             <div className="card-header">
+            <div className="card-header">
               <div className="card-title">[!] Meta-Sentinel</div>
               <span className={`agent-badge ${sentinelAlert ? 'badge-anomaly' : 'badge-active'}`}>
                 {sentinelAlert ? 'ALERT' : 'NOMINAL'}
@@ -319,10 +350,10 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
         </div>
       </div>
 
-      <Toast 
-        message="Verified on Hedera Consensus Service" 
-        isVisible={showVerifyToast} 
-        onClose={() => setShowVerifyToast(false)} 
+      <Toast
+        message="Verified on Hedera Consensus Service"
+        isVisible={showVerifyToast}
+        onClose={() => setShowVerifyToast(false)}
       />
     </>
   );
