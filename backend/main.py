@@ -128,7 +128,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://aegis-morpheme-x.vercel.app",
-        "https://aegis-morpheme-x-git-main-tazwaryayyyys-projects.vercel.app"
+        "https://aegis-morpheme-x-git-main-tazwaryayyyys-projects.vercel.app",
+        "https://aegis-morpheme-h70x74p1k-tazwaryayyyys-projects.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],

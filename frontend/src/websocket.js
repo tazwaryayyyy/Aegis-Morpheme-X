@@ -5,14 +5,17 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 
-// BUGFIX: Improved WS_URL fallback logic to use REACT_APP_BACKEND_URL
+// BUGFIX: Improved WS_URL fallback logic to use REACT_APP_API_URL or REACT_APP_BACKEND_URL
 const getWsUrl = () => {
-  const backendUrl = process.env.REACT_APP_BACKEND_URL; // e.g. http://localhost:8000
-  if (backendUrl) {
-    const wsBase = backendUrl.replace(/^http/, 'ws');
+  const apiUrl = process.env.REACT_APP_API_URL; // e.g. https://aegis-morpheme-x.onrender.com
+  const backendUrl = process.env.REACT_APP_BACKEND_URL; // fallback
+
+  const baseUrl = apiUrl || backendUrl;
+  if (baseUrl) {
+    const wsBase = baseUrl.replace(/^http/, 'ws');
     return `${wsBase}/ws`;
   }
-  return process.env.REACT_APP_WS_URL || 'ws://localhost:8000/ws';
+  return process.env.REACT_APP_WS_URL || 'wss://aegis-morpheme-x.onrender.com/ws'; // BUGFIX: default to prod backend
 };
 
 const WS_URL = getWsUrl();
@@ -49,7 +52,7 @@ export function useAMXWebSocket(onEvent) {
         console.log('[AMX WS] Connected');
         if (isMounted.current) setConnected(true); // BUGFIX: safe state update
         reconnectCount.current = 0;
-        
+
         // Start keepalive ping
         const pingInterval = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
@@ -74,12 +77,12 @@ export function useAMXWebSocket(onEvent) {
       ws.onclose = () => {
         console.log('[AMX WS] Disconnected');
         if (isMounted.current) setConnected(false); // BUGFIX: safe state update
-        
+
         if (ws._pingInterval) clearInterval(ws._pingInterval);
-        
+
         // BUGFIX: prevent multiple timers
         if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-        
+
         if (isMounted.current && reconnectCount.current < MAX_RECONNECT) {
           reconnectCount.current += 1;
           reconnectTimer.current = setTimeout(connect, RECONNECT_INTERVAL); // BUGFIX: 3s reconnect
