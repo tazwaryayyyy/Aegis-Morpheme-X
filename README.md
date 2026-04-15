@@ -59,7 +59,30 @@ cd frontend
 npm install
 npm start
 ```
-*Dashbord runs at `localhost:3000`. Wait for the ONLINE indicator to turn green.*
+*Dashboard runs at `localhost:3000`. Wait for the ONLINE indicator to turn green.*
+
+---
+
+## 🚀 Production Deployment (Vercel + Render)
+
+### Vercel Frontend Setup
+1. **Connect your GitHub repo** to Vercel
+2. **Set Environment Variable** in Vercel Dashboard:
+   - **Name**: `REACT_APP_API_URL`
+   - **Value**: `https://aegis-morpheme-x.onrender.com` (or your Render backend URL)
+   - Add to: **Production**, **Preview**, **Development**
+3. **Redeploy** to apply changes
+
+### Render Backend
+- The backend auto-deploys on `git push` from the `main` branch
+- Ensure `SIMULATE_HCS=true` in Render environment for fallback mode
+- Check logs via Render dashboard if deployment fails
+
+### Troubleshooting "Failed to Fetch"
+If the simulate button fails:
+1. Verify `REACT_APP_API_URL` is set correctly on Vercel
+2. Check Render backend status at `/api/status`
+3. Ensure Render backend is not in "sleeping" state (Render free tier pauses inactive apps)
 
 ---
 
