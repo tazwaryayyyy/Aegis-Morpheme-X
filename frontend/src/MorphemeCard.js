@@ -30,10 +30,10 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
     setLoading(true);
 
     setTimeout(() => {
-      // BUGFIX: If TX is simulated, link to HCS topic page instead
+      // Use the real explorer URL (for live transactions) or fallback to topic page
       let url = morpheme.explorer_url;
       if (morpheme.hedera_tx_id && morpheme.hedera_tx_id.startsWith('SIMULATED_')) {
-        url = 'https://hashscan.io/testnet/topic/0.0.4982301';
+        url = 'https://hashscan.io/testnet/topic/0.0.8661273';  // Real HCS topic ID
       }
       window.open(url, '_blank');
       setLoading(false);
