@@ -50,8 +50,22 @@ class StatisticalSentinel:
 
             # Need at least 3 samples to have a meaningful baseline
             if len(hist) < 3:
+                # Exception: Flag extreme values even with insufficient history
+                # Rogue outputs like 9999 (finance) or 200+ (triage) are obvious anomalies
+                if self._is_extreme_value(agent, value):
+                    result["anomaly"] = True
+                    result["action"] = "block"
+                    result["slash_percent"] = 10
+                    result["zscore"] = float('inf')
+                    logger.warning(
+                        f"[Sentinel] EXTREME VALUE DETECTED – agent={agent}, value={value} "
+                        f"(insufficient history but value is extreme)"
+                    )
+                    self.anomaly_log.append(result.copy())
+                    return result
+
                 logger.debug(
-                    f"[Sentinel] {agent}: too few samples ({len(hist)}), skipping check")
+                    f"[Sentinel] {agent}: too few samples ({len(hist)}), deferring check")
                 hist.append(value)
                 self.history[agent] = hist
                 return result
@@ -113,6 +127,23 @@ class StatisticalSentinel:
                 self.history[agent] = hist
 
             return result
+
+    def _is_extreme_value(self, agent: str, value: float) -> bool:
+        """
+        Detect extreme values that indicate rogue agent output, even with limited history.
+        Uses domain-specific thresholds per agent type.
+        """
+        # Define reasonable ranges for each agent's output
+        extreme_thresholds = {
+            # Triage outputs: 0.0 (SELF_CARE) to 1.0 (URGENT); >2 is extreme
+            "triage": 2.0,
+            "diagnosis": 1.5,     # Diagnosis: 0.0 to 1.0 risk; >1.5 is nonsensical
+            "finance": 1000.0,    # Finance: typical payout 0-500 HCVR; >1000 is extreme
+            "epidemiology": 2.0,  # Epidemiology: 0.0 to 1.0 risk; >2 is extreme
+        }
+
+        threshold = extreme_thresholds.get(agent, 2.0)
+        return abs(value) > threshold
 
     def get_anomaly_log(self) -> list[dict]:
         return self.anomaly_log
