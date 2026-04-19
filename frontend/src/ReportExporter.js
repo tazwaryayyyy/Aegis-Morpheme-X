@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 
 const ReportExporter = ({ morpheme, events, cityConfig, agentStakes, anomalyData }) => {
   const [generating, setGenerating] = useState(false);
-  const [done,        setDone]       = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState(null);
 
   const buildHTML = (data) => `<!DOCTYPE html>
 <html lang="en">
@@ -156,15 +157,15 @@ const ReportExporter = ({ morpheme, events, cityConfig, agentStakes, anomalyData
     <div class="section">
       <div class="section-title">HTS Balances (AMXSTAKE)</div>
       ${data.agentStakes
-        ? Object.entries(data.agentStakes).map(([a, s]) => `<div class="dense-row"><span class="label">${a.toUpperCase()}</span><span class="value">${s}</span></div>`).join('')
-        : '<div class="label">NO STAKE DATA AVAILABLE</div>'}
+      ? Object.entries(data.agentStakes).map(([a, s]) => `<div class="dense-row"><span class="label">${a.toUpperCase()}</span><span class="value">${s}</span></div>`).join('')
+      : '<div class="label">NO STAKE DATA AVAILABLE</div>'}
     </div>
 
     <div class="section">
       <div class="section-title">Execution Audit Trail</div>
       ${data.events.length > 0
-        ? data.events.map(e => `<div class="event-item"><span class="label mono" style="margin-right:12px;">[${new Date(e._ts || Date.now()).toISOString()}]</span> <strong>${e.type.toUpperCase()}</strong>: ${e.reasoning || e.decision || e.agent || 'null'}</div>`).join('')
-        : '<div class="label">NO LOGS CAPTURED</div>'}
+      ? data.events.map(e => `<div class="event-item"><span class="label mono" style="margin-right:12px;">[${new Date(e._ts || Date.now()).toISOString()}]</span> <strong>${e.type.toUpperCase()}</strong>: ${e.reasoning || e.decision || e.agent || 'null'}</div>`).join('')
+      : '<div class="label">NO LOGS CAPTURED</div>'}
     </div>
 
     <div class="footer">
@@ -176,21 +177,26 @@ const ReportExporter = ({ morpheme, events, cityConfig, agentStakes, anomalyData
 
   const generate = async () => {
     setGenerating(true);
+    setError(null);
     try {
-      const data    = {
-        timestamp:  new Date().toISOString(),
-        city:       cityConfig,
+      if (!events || events.length === 0) {
+        setError('No events captured yet. Run a scenario first.');
+        return;
+      }
+      const data = {
+        timestamp: new Date().toISOString(),
+        city: cityConfig,
         morpheme,
-        events:     (events || []).slice(0, 50),
+        events: (events || []).slice(0, 50),
         agentStakes,
         anomalyData,
         systemInfo: { version: '1.0.0', network: 'Hedera Testnet' },
       };
-      const html    = buildHTML(data);
-      const blob    = new Blob([html], { type: 'text/html' });
-      const url     = URL.createObjectURL(blob);
-      const link    = document.createElement('a');
-      link.href     = url;
+      const html = buildHTML(data);
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
       link.download = `amx-audit-${new Date().toISOString().split('T')[0]}.html`;
       document.body.appendChild(link);
       link.click();
@@ -200,6 +206,8 @@ const ReportExporter = ({ morpheme, events, cityConfig, agentStakes, anomalyData
       setTimeout(() => setDone(false), 3000);
     } catch (err) {
       console.error('[ReportExporter]', err);
+      setError(`Export failed: ${err.message || 'Unknown error'}`);
+      setTimeout(() => setError(null), 4000);
     } finally {
       setGenerating(false);
     }
@@ -214,21 +222,35 @@ const ReportExporter = ({ morpheme, events, cityConfig, agentStakes, anomalyData
         <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 16 }}>
           {'>'} COMPILE SYSTEM AUDIT LOG TO RAW HTML
         </div>
+        {error && (
+          <div style={{
+            padding: '10px 12px',
+            marginBottom: '12px',
+            background: 'rgba(255, 100, 100, 0.1)',
+            border: '1px solid rgba(255, 100, 100, 0.3)',
+            borderRadius: '2px',
+            color: 'rgba(255, 100, 100, 0.8)',
+            fontSize: '9px',
+            fontFamily: 'var(--font-mono)'
+          }}>
+            [!] {error}
+          </div>
+        )}
         <button
           className="magnetic-btn"
           onClick={generate}
           disabled={generating}
-          style={{ 
-            width: '100%', 
-            padding: '12px', 
-            border: '1px solid var(--cyan)', 
-            background: 'rgba(0,229,255,0.05)', 
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: '1px solid var(--cyan)',
+            background: 'rgba(0,229,255,0.05)',
             color: 'var(--cyan)',
-            fontFamily: 'var(--font-mono)', 
-            fontSize: 11, 
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
             letterSpacing: 2,
             cursor: 'none', // Uses our custom cursor
-            transition: 'all 0.25s ease', 
+            transition: 'all 0.25s ease',
             textShadow: '0 0 4px rgba(0,229,255,0.2)',
             textTransform: 'uppercase',
             display: 'flex',

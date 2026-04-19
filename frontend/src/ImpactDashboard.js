@@ -3,13 +3,14 @@ import { jsPDF } from 'jspdf';
 
 const ImpactDashboard = ({ events, stakes }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [pdfError, setPdfError] = useState(null);
 
   const stats = useMemo(() => {
     const decisionsVerified = events.filter(e => e.type === 'agent_decision').length;
     const anomaliesBlocked = events.filter(e => e.type === 'sentinel_block').length;
     const payoutsTriggered = events.filter(e => e.type === 'payout_triggered' || e.type === 'hcvr_payout').length;
     const agentsActive = Object.values(stakes).filter(s => s > 0).length;
-    
+
     // Slashing stats
     const slashes = events.filter(e => e.type === 'agent_slash' || e.type === 'sentinel_block');
     const totalSlashed = slashes.length * 250; // Every slash is 10% of 2500 = 250 AMX
@@ -26,175 +27,193 @@ const ImpactDashboard = ({ events, stakes }) => {
 
   const generatePDF = () => {
     setIsGenerating(true);
-    
+    setPdfError(null);
+
     // Simulate slight delay for UX
     setTimeout(() => {
-      const doc = new jsPDF();
-      const now = new Date().toISOString();
-      const margin = 20;
-      let y = 20;
+      try {
+        const doc = new jsPDF();
+        const now = new Date().toISOString();
+        const margin = 20;
+        let y = 20;
 
-      // 1. HEADER
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(22);
-      doc.text('AegisMorpheme-X Compliance Report', margin, y);
-      y += 10;
-      doc.setFontSize(10);
-      doc.setFont('courier', 'normal');
-      doc.text(`TIMESTAMP: ${now}`, margin, y);
-      y += 5;
-      doc.line(margin, y, 190, y);
-      y += 15;
-
-      // 2. SESSION SUMMARY
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(14);
-      doc.text('SECTION 1: SESSION SUMMARY', margin, y);
-      y += 10;
-      doc.setFont('courier', 'normal');
-      doc.setFontSize(11);
-      doc.text(`- Decisions Sealed:   ${stats.decisionsVerified}`, margin, y); y += 7;
-      doc.text(`- Anomalies Blocked:  ${stats.anomaliesBlocked}`, margin, y); y += 7;
-      doc.text(`- Slashing Events:    ${stats.slashingCount}`, margin, y); y += 7;
-      doc.text(`- Total AMX Slashed:  ${stats.totalSlashed} AMX`, margin, y); y += 15;
-
-      // 3. DECISION LOG
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(14);
-      doc.text('SECTION 2: DECISION LOG', margin, y);
-      y += 10;
-      doc.setFontSize(8);
-      doc.text('TIMESTAMP           | AGENT      | RISK  | STATUS', margin, y);
-      y += 4;
-      doc.line(margin, y, 190, y);
-      y += 6;
-
-      const decisions = events.filter(e => e.type === 'agent_decision').slice(0, 15);
-      doc.setFont('courier', 'normal');
-      decisions.forEach(d => {
-        const time = new Date(d._ts || Date.now()).toISOString().split('T')[1].split('.')[0];
-        const agent = (d.agent || 'UNKNOWN').toUpperCase().padEnd(10);
-        const risk = (d.risk || 0).toFixed(3).padEnd(5);
-        const status = 'SEALED';
-        doc.text(`${time} UTC       | ${agent} | ${risk} | ${status}`, margin, y);
+        // 1. HEADER
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(22);
+        doc.text('AegisMorpheme-X Compliance Report', margin, y);
+        y += 10;
+        doc.setFontSize(10);
+        doc.setFont('courier', 'normal');
+        doc.text(`TIMESTAMP: ${now}`, margin, y);
         y += 5;
-      });
-      y += 15;
+        doc.line(margin, y, 190, y);
+        y += 15;
 
-      // 4. ANOMALY LOG
-      if (y > 250) { doc.addPage(); y = 20; }
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(14);
-      doc.text('SECTION 3: ANOMALY LOG', margin, y);
-      y += 10;
-      doc.setFontSize(8);
-      doc.text('TIMESTAMP           | AGENT      | DEVIATION | ACTION', margin, y);
-      y += 4;
-      doc.line(margin, y, 190, y);
-      y += 6;
+        // 2. SESSION SUMMARY
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(14);
+        doc.text('SECTION 1: SESSION SUMMARY', margin, y);
+        y += 10;
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(11);
+        doc.text(`- Decisions Sealed:   ${stats.decisionsVerified}`, margin, y); y += 7;
+        doc.text(`- Anomalies Blocked:  ${stats.anomaliesBlocked}`, margin, y); y += 7;
+        doc.text(`- Slashing Events:    ${stats.slashingCount}`, margin, y); y += 7;
+        doc.text(`- Total AMX Slashed:  ${stats.totalSlashed} AMX`, margin, y); y += 15;
 
-      const anomalies = events.filter(e => e.type === 'sentinel_block').slice(0, 10);
-      doc.setFont('courier', 'normal');
-      if (anomalies.length === 0) {
-        doc.text('NO ANOMALIES DETECTED IN CURRENT SESSION', margin, y);
-        y += 5;
-      } else {
-        anomalies.forEach(a => {
-          const time = new Date(a._ts || Date.now()).toISOString().split('T')[1].split('.')[0];
-          const agent = (a.agent || 'UNKNOWN').toUpperCase().padEnd(10);
-          const dev = '0.985'.padEnd(9); // Standard sentinel threshold for blocks
-          const action = 'STAKE_SLASHED';
-          doc.text(`${time} UTC       | ${agent} | ${dev} | ${action}`, margin, y);
+        // 3. DECISION LOG
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(14);
+        doc.text('SECTION 2: DECISION LOG', margin, y);
+        y += 10;
+        doc.setFontSize(8);
+        doc.text('TIMESTAMP           | AGENT      | RISK  | STATUS', margin, y);
+        y += 4;
+        doc.line(margin, y, 190, y);
+        y += 6;
+
+        const decisions = events.filter(e => e.type === 'agent_decision').slice(0, 15);
+        doc.setFont('courier', 'normal');
+        decisions.forEach(d => {
+          const time = new Date(d._ts || Date.now()).toISOString().split('T')[1].split('.')[0];
+          const agent = (d.agent || 'UNKNOWN').toUpperCase().padEnd(10);
+          const risk = (d.risk || 0).toFixed(3).padEnd(5);
+          const status = 'SEALED';
+          doc.text(`${time} UTC       | ${agent} | ${risk} | ${status}`, margin, y);
           y += 5;
         });
+        y += 15;
+
+        // 4. ANOMALY LOG
+        if (y > 250) { doc.addPage(); y = 20; }
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(14);
+        doc.text('SECTION 3: ANOMALY LOG', margin, y);
+        y += 10;
+        doc.setFontSize(8);
+        doc.text('TIMESTAMP           | AGENT      | DEVIATION | ACTION', margin, y);
+        y += 4;
+        doc.line(margin, y, 190, y);
+        y += 6;
+
+        const anomalies = events.filter(e => e.type === 'sentinel_block').slice(0, 10);
+        doc.setFont('courier', 'normal');
+        if (anomalies.length === 0) {
+          doc.text('NO ANOMALIES DETECTED IN CURRENT SESSION', margin, y);
+          y += 5;
+        } else {
+          anomalies.forEach(a => {
+            const time = new Date(a._ts || Date.now()).toISOString().split('T')[1].split('.')[0];
+            const agent = (a.agent || 'UNKNOWN').toUpperCase().padEnd(10);
+            const dev = '0.985'.padEnd(9); // Standard sentinel threshold for blocks
+            const action = 'STAKE_SLASHED';
+            doc.text(`${time} UTC       | ${agent} | ${dev} | ${action}`, margin, y);
+            y += 5;
+          });
+        }
+
+        // 5. FOOTER
+        doc.setFont('courier', 'italic');
+        doc.setFontSize(8);
+        doc.text('Generated by AMX Protocol — All decisions verified on Hedera Consensus Service', margin, 285);
+
+        doc.save(`AMX_Compliance_Report_${Date.now()}.pdf`);
+        setIsGenerating(false);
+      } catch (err) {
+        console.error('[ImpactDashboard PDF]', err);
+        setPdfError(`PDF generation failed: ${err.message}`);
+        setIsGenerating(false);
+        setTimeout(() => setPdfError(null), 4000);
       }
 
-      // 5. FOOTER
-      doc.setFont('courier', 'italic');
-      doc.setFontSize(8);
-      doc.text('Generated by AMX Protocol — All decisions verified on Hedera Consensus Service', margin, 285);
+      const cards = [
+        { label: 'DECISIONS_VERIFIED', value: stats.decisionsVerified, sub: 'Sealed Decisions', color: 'var(--cyan)' },
+        { label: 'ANOMALIES_BLOCKED', value: stats.anomaliesBlocked, sub: 'Sentinel Intercepts', color: 'var(--orange)' },
+        { label: 'PAYOUTS_TRIGGERED', value: stats.payoutsTriggered, sub: 'Parametric Disbursals', color: 'var(--acid)' },
+        { label: 'AGENTS_ACTIVE', value: stats.agentsActive, sub: 'Network Nodes Status', color: 'var(--cyan)' },
+      ];
 
-      doc.save(`AMX_Compliance_Report_${Date.now()}.pdf`);
-      setIsGenerating(false);
-    }, 800);
-  };
-
-  const cards = [
-    { label: 'DECISIONS_VERIFIED', value: stats.decisionsVerified, sub: 'Sealed Decisions', color: 'var(--cyan)' },
-    { label: 'ANOMALIES_BLOCKED', value: stats.anomaliesBlocked, sub: 'Sentinel Intercepts', color: 'var(--orange)' },
-    { label: 'PAYOUTS_TRIGGERED', value: stats.payoutsTriggered, sub: 'Parametric Disbursals', color: 'var(--acid)' },
-    { label: 'AGENTS_ACTIVE', value: stats.agentsActive, sub: 'Network Nodes Status', color: 'var(--cyan)' },
-  ];
-
-  return (
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
-        <button
-          onClick={generatePDF}
-          disabled={isGenerating}
-          style={{
-            background: isGenerating ? 'rgba(0, 229, 255, 0.05)' : 'rgba(0, 229, 255, 0.1)',
-            border: '1px solid var(--cyan)',
-            color: '#fff',
-            padding: '8px 16px',
-            borderRadius: '4px',
+      return (
+        <div style={{ marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', gap: '12px', alignItems: 'center' }}>
+        {pdfError && (
+          <div style={{
+            padding: '8px 12px',
+            background: 'rgba(255, 100, 100, 0.1)',
+            border: '1px solid rgba(255, 100, 100, 0.3)',
+            borderRadius: '2px',
+            color: 'rgba(255, 100, 100, 0.8)',
+            fontSize: '9px',
             fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            letterSpacing: '0.1em',
-            cursor: isGenerating ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            opacity: isGenerating ? 0.6 : 1,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-          onMouseEnter={(e) => !isGenerating && (e.currentTarget.style.background = 'rgba(0, 229, 255, 0.2)')}
-          onMouseLeave={(e) => !isGenerating && (e.currentTarget.style.background = 'rgba(0, 229, 255, 0.1)')}
-        >
-          {isGenerating ? (
-            <>
-              <span className="animate-pulse">GENERATING...</span>
-            </>
-          ) : (
-            <>
-              <span>EXPORT COMPLIANCE REPORT</span>
-              <span style={{ fontSize: '12px' }}>↓</span>
-            </>
-          )}
-        </button>
-      </div>
-
-      <div className="stats-row" style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(4, 1fr)', 
-        gap: '12px', 
-      }}>
-        {cards.map((card, i) => (
-          <div key={i} className="stat-card" style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '4px',
-            padding: '16px',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            transition: 'transform 0.2s ease',
+            maxWidth: '200px'
           }}>
-            <div style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: '8px' }}>
-              {card.label}
-            </div>
-            <div style={{ fontSize: '28px', fontFamily: 'var(--font-display)', color: card.color, marginBottom: '2px' }}>
-              {card.value}
-            </div>
-            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-mono)' }}>
-              {card.sub}
-            </div>
+            [!] {pdfError}
           </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+        )}
+              disabled={isGenerating}
+              style={{
+                background: isGenerating ? 'rgba(0, 229, 255, 0.05)' : 'rgba(0, 229, 255, 0.1)',
+                border: '1px solid var(--cyan)',
+                color: '#fff',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '10px',
+                letterSpacing: '0.1em',
+                cursor: isGenerating ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: isGenerating ? 0.6 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              onMouseEnter={(e) => !isGenerating && (e.currentTarget.style.background = 'rgba(0, 229, 255, 0.2)')}
+              onMouseLeave={(e) => !isGenerating && (e.currentTarget.style.background = 'rgba(0, 229, 255, 0.1)')}
+            >
+              {isGenerating ? (
+                <>
+                  <span className="animate-pulse">GENERATING...</span>
+                </>
+              ) : (
+                <>
+                  <span>EXPORT COMPLIANCE REPORT</span>
+                  <span style={{ fontSize: '12px' }}>↓</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="stats-row" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '12px',
+          }}>
+            {cards.map((card, i) => (
+              <div key={i} className="stat-card" style={{
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '4px',
+                padding: '16px',
+                backdropFilter: 'blur(8px)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                transition: 'transform 0.2s ease',
+              }}>
+                <div style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: '8px' }}>
+                  {card.label}
+                </div>
+                <div style={{ fontSize: '28px', fontFamily: 'var(--font-display)', color: card.color, marginBottom: '2px' }}>
+                  {card.value}
+                </div>
+                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-mono)' }}>
+                  {card.sub}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div >
+      );
+    };
 
 export default ImpactDashboard;

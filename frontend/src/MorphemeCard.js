@@ -161,56 +161,72 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
         </div>
       )}
 
-      {/* BUGFIX: Only show verify button for REAL transactions with valid explorer URLs */}
-      {morpheme && morpheme.explorer_url && !morpheme.hedera_tx_id?.startsWith('SIMULATED_') && (
+      {/* BUGFIX: Show verify button for all morphemes, with error state when explorer_url missing */}
+      {morpheme && (
         <div style={{ padding: '0 20px 20px' }}>
-          <button
-            className="magnetic-btn"
-            onClick={handleVerify}
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              background: loading ? 'rgba(170, 255, 0, 0.02)' : 'rgba(170, 255, 0, 0.05)',
-              border: `1px solid ${loading ? 'rgba(170, 255, 0, 0.2)' : 'var(--acid)'}`,
+          {!morpheme.explorer_url ? (
+            <div style={{
+              padding: '12px 14px',
+              background: 'rgba(255, 100, 100, 0.05)',
+              border: '1px solid rgba(255, 100, 100, 0.3)',
               borderRadius: '4px',
-              color: loading ? 'rgba(170, 255, 0, 0.5)' : 'var(--acid)',
+              color: 'rgba(255, 100, 100, 0.8)',
               fontFamily: 'var(--font-mono)',
-              fontSize: '11px',
-              fontWeight: 'bold',
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase',
-              cursor: loading ? 'not-allowed' : 'none',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              pointerEvents: loading ? 'none' : 'auto',
-              opacity: loading ? 0.7 : 1
-            }}
-            onMouseEnter={(e) => {
-              if (loading) return;
-              e.currentTarget.style.background = 'rgba(170, 255, 0, 0.12)';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(170, 255, 0, 0.15)';
-            }}
-            onMouseLeave={(e) => {
-              if (loading) return;
-              e.currentTarget.style.background = 'rgba(170, 255, 0, 0.05)';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            {loading ? (
-              <div className="loading-spinner" />
-            ) : (
-              <>
-                <span>VERIFY ON HEDERA</span>
-                <span style={{ fontSize: '14px' }}>↗</span>
-              </>
-            )}
-          </button>
+              fontSize: '10px',
+              textAlign: 'center',
+              letterSpacing: '0.05em'
+            }}>
+              [!] VERIFICATION FAILED — No Hedera explorer URL available
+              {morpheme.fallback && <div style={{ marginTop: 6, fontSize: 9, color: 'rgba(255, 150, 100, 0.7)' }}>Fallback mode: {morpheme.error?.slice(0, 40)}</div>}
+            </div>
+          ) : (
+            <button
+              className="magnetic-btn"
+              onClick={handleVerify}
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: loading ? 'rgba(170, 255, 0, 0.02)' : 'rgba(170, 255, 0, 0.05)',
+                border: `1px solid ${loading ? 'rgba(170, 255, 0, 0.2)' : 'var(--acid)'}`,
+                borderRadius: '4px',
+                color: loading ? 'rgba(170, 255, 0, 0.5)' : 'var(--acid)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+                cursor: loading ? 'not-allowed' : 'none',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                pointerEvents: loading ? 'none' : 'auto',
+                opacity: loading ? 0.7 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (loading) return;
+                e.currentTarget.style.background = 'rgba(170, 255, 0, 0.12)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(170, 255, 0, 0.15)';
+              }}
+              onMouseLeave={(e) => {
+                if (loading) return;
+                e.currentTarget.style.background = 'rgba(170, 255, 0, 0.05)';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              {loading ? (
+                <div className="loading-spinner" />
+              ) : (
+                <>
+                  <span>VERIFY ON HEDERA</span>
+                  <span style={{ fontSize: '14px' }}>↗</span>
+                </>
+              )}
+            </button>
         </div>
       )}
 

@@ -35,7 +35,7 @@ _seq_counter = random.randint(100000, 999999)
 
 def _generate_tx_id() -> str:
     """Generate a realistic Hedera transaction ID that works with HashScan."""
-    global _seq_counter
+    global _seq_counter  # pylint: disable=global-statement
     _seq_counter += 1
     account = os.getenv("HEDERA_ACCOUNT_ID", "0.0.4312847")
     # Use a realistic timestamp from recent period
@@ -81,7 +81,7 @@ def submit_morpheme(morpheme: dict) -> dict:
         )
         morpheme["confirmed"] = True
 
-        logger.info(f"[HCS] Morpheme submitted (simulated): tx={tx_id}")
+        logger.info("[HCS] Morpheme submitted (simulated): tx=%s", tx_id)
     else:
         # Production HCS submission via hedera-sdk-py
         try:
@@ -89,7 +89,7 @@ def submit_morpheme(morpheme: dict) -> dict:
                 Client, AccountId, PrivateKey, TopicMessageSubmitTransaction
             )
         except ImportError as e:
-            logger.error(f"[HCS] Failed to import hedera SDK: {e}")
+            logger.error("[HCS] Failed to import hedera SDK: %s", e)
             # BUGFIX: Fallback to simulation without generating broken explorer URLs
             fallback_tx_id = f"FALLBACK_{_generate_tx_id()}"
             morpheme["hedera_tx_id"] = fallback_tx_id
@@ -110,7 +110,7 @@ def submit_morpheme(morpheme: dict) -> dict:
             client = Client.forTestnet()
             client.setOperator(operator_id, operator_key)
 
-            from hedera import TopicId  # type: ignore
+            from hedera import TopicId  # type: ignore  # pylint: disable=no-name-in-module
             topic_id = TopicId.fromString(config["topic_id"])
 
             tx = (
@@ -128,10 +128,10 @@ def submit_morpheme(morpheme: dict) -> dict:
                 f"https://hashscan.io/{config['network']}/transaction/{morpheme['hedera_tx_id']}"
             )
             logger.info(
-                f"[HCS] Morpheme submitted (live): tx={morpheme['hedera_tx_id']}")
-        except Exception as e:
+                "[HCS] Morpheme submitted (live): tx=%s", morpheme["hedera_tx_id"])
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error(
-                f"[HCS] Real submission failed, falling back to simulation: {e}")
+                "[HCS] Real submission failed, falling back to simulation: %s", e)
             fallback_tx_id = f"FALLBACK_{_generate_tx_id()}"
             morpheme["hedera_tx_id"] = fallback_tx_id
             morpheme["hedera_topic_id"] = config["topic_id"]
@@ -143,7 +143,7 @@ def submit_morpheme(morpheme: dict) -> dict:
             # BUGFIX: No broken links in fallback mode
             morpheme["explorer_url"] = None
             logger.warning(
-                f"[HCS] Using fallback transaction: {fallback_tx_id}")
+                "[HCS] Using fallback transaction: %s", fallback_tx_id)
 
     return morpheme
 
@@ -152,5 +152,5 @@ def submit_sentinel_log(log: dict) -> str:
     """Submit a sentinel anomaly log to the dedicated HCS topic."""
     tx_id = _generate_tx_id()
     logger.info(
-        f"[HCS] Sentinel log submitted: tx={tx_id}, agent={log.get('agent')}")
+        "[HCS] Sentinel log submitted: tx=%s, agent=%s", tx_id, log.get("agent"))
     return tx_id
