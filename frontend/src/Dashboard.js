@@ -70,7 +70,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
   const [runCount, setRunCount] = useState(0);
   const [events, setEvents] = useState(externalEvents || []);
   const [showVerifyToast, setShowVerifyToast] = useState(false);
-  const [skipEventsUntil, setSkipEventsUntil] = useState(0); // BUGFIX: prevent event repopulation after clear
+  const skipEventsUntilRef = useRef(0); // BUGFIX: use ref for skip logic, not state (avoids stale closure)
 
   const feedRef = useRef(null);
   const isMounted = useRef(true); // BUGFIX: mount tracking
@@ -102,8 +102,8 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
   const handleEvent = useCallback((ev) => {
     if (!ev || !isMounted.current) return; // BUGFIX: null & mount check
 
-    // BUGFIX: Skip events if recently cleared
-    if (Date.now() < skipEventsUntil) return;
+    // BUGFIX: Skip events if recently cleared (check ref, not state)
+    if (Date.now() < skipEventsUntilRef.current) return;
 
     // Use functional setState to avoid stale closure on events
     setEvents(prev => {
@@ -244,7 +244,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
                   <button
                     onClick={() => {
                       setEvents([]);
-                      setSkipEventsUntil(Date.now() + 2000); // BUGFIX: pause for 2s to prevent immediate repopulation
+                      skipEventsUntilRef.current = Date.now() + 2000; // BUGFIX: pause for 2s using ref (avoids stale closure)
                     }}
                     style={{
                       padding: '4px 12px',
