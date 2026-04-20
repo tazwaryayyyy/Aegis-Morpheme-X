@@ -150,7 +150,7 @@ const ReportExporter = ({ morpheme, events, cityConfig, agentStakes, anomalyData
       <div class="dense-row"><span class="label">RISK_SCORE</span><span class="value">${data.morpheme.risk_score}</span></div>
       <div class="dense-row"><span class="label">TRIAGE</span><span class="value">${data.morpheme.triage}</span></div>
       <div class="dense-row"><span class="label">IS_BLOCKED</span><span class="value">${data.morpheme.blocked ? 'TRUE' : 'FALSE'}</span></div>
-      ${data.morpheme.hedera_tx_id ? `<div style="margin-top:20px;"><a href="${data.morpheme.explorer_url}" target="_blank" class="btn">View on HashScan &rarr;</a></div>` : ''}
+      ${data.morpheme.explorer_url ? `<div style="margin-top:20px;"><a href="${data.morpheme.explorer_url}" target="_blank" class="btn">View on HashScan &rarr;</a></div>` : ''}
       ` : '<div class="label">NO MORPHEME SEALED IN CURRENT SESSION</div>'}
     </div>
 
