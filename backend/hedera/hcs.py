@@ -68,18 +68,17 @@ def submit_morpheme(morpheme: dict) -> dict:
 
         sim_uuid = str(uuid.uuid4()).replace("-", "")[:24]
         tx_id = f"SIMULATED_{sim_uuid}"
-        # Build a realistic explorer URL using a realistic-looking tx ID
-        display_tx = _generate_tx_id()
         consensus_ts = _generate_consensus_timestamp()
 
         morpheme["hedera_tx_id"] = tx_id
         morpheme["hedera_topic_id"] = config["topic_id"]
         morpheme["message_hash"] = message_hash
         morpheme["consensus_timestamp"] = consensus_ts
-        morpheme["explorer_url"] = (
-            f"https://hashscan.io/{config['network']}/transaction/{display_tx}"
-        )
         morpheme["confirmed"] = True
+        # BUGFIX: Mark as simulation so frontend knows not to verify
+        morpheme["is_simulated"] = True
+        # BUGFIX: Don't set explorer_url for simulated transactions
+        morpheme["explorer_url"] = None
 
         logger.info("[HCS] Morpheme submitted (simulated): tx=%s", tx_id)
     else:

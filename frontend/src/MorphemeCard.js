@@ -161,10 +161,24 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
         </div>
       )}
 
-      {/* BUGFIX: Show verify button for all morphemes, with error state when explorer_url missing */}
+      {/* BUGFIX: Show verify button for all morphemes, with appropriate state messages */}
       {morpheme && (
         <div style={{ padding: '0 20px 20px' }}>
-          {!morpheme.explorer_url ? (
+          {morpheme.is_simulated ? (
+            <div style={{
+              padding: '12px 14px',
+              background: 'rgba(170, 255, 0, 0.05)',
+              border: '1px solid rgba(170, 255, 0, 0.2)',
+              borderRadius: '4px',
+              color: 'rgba(170, 255, 0, 0.6)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              textAlign: 'center',
+              letterSpacing: '0.05em'
+            }}>
+              [•] SIMULATION MODE — Demo transaction (not on-chain)
+            </div>
+          ) : !morpheme.explorer_url ? (
             <div style={{
               padding: '12px 14px',
               background: 'rgba(255, 100, 100, 0.05)',
@@ -176,8 +190,8 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
               textAlign: 'center',
               letterSpacing: '0.05em'
             }}>
-              [!] VERIFICATION FAILED — No Hedera explorer URL available
-              {morpheme.fallback && <div style={{ marginTop: 6, fontSize: 9, color: 'rgba(255, 150, 100, 0.7)' }}>Fallback mode: {morpheme.error?.slice(0, 40)}</div>}
+              [!] VERIFICATION FAILED — Hedera submission error
+              {morpheme.fallback && <div style={{ marginTop: 6, fontSize: 9, color: 'rgba(255, 150, 100, 0.7)' }}>Fallback: {morpheme.error?.slice(0, 40)}</div>}
             </div>
           ) : (
             <button
@@ -228,42 +242,6 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
               )}
             </button>
           )}
-        </div>
-      )}
-
-      {/* BUGFIX: Show simulation label when tx is simulated */}
-      {morpheme && morpheme.hedera_tx_id?.startsWith('SIMULATED_') && (
-        <div style={{ padding: '0 20px 20px' }}>
-          <div style={{
-            width: '100%',
-            padding: '14px',
-            textAlign: 'center',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            color: 'rgba(170, 255, 0, 0.4)',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase'
-          }}>
-            [SIMULATION MODE — no on-chain record]
-          </div>
-        </div>
-      )}
-
-      {/* BUGFIX: Show fallback label when submission failed */}
-      {morpheme && morpheme.fallback && !morpheme.hedera_tx_id?.startsWith('SIMULATED_') && (
-        <div style={{ padding: '0 20px 20px' }}>
-          <div style={{
-            width: '100%',
-            padding: '14px',
-            textAlign: 'center',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            color: 'rgba(255, 100, 100, 0.6)',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase'
-          }}>
-            [FALLBACK MODE — Hedera unavailable]
-          </div>
         </div>
       )}
     </div>
