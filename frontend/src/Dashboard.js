@@ -9,7 +9,7 @@ import { useAMXWebSocket } from './websocket';
 import Toast from './Toast';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-const MAX_EVENTS = 25;  // BUGFIX: Reduced from 80 to keep stream readable after 2-3 simulations
+const MAX_EVENTS = 15;  // BUGFIX: Reduced from 25 to prevent congestion and overlap
 
 function eventMeta(ev) {
   // BUGFIX: Guard against undefined/null event
@@ -244,7 +244,8 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
                   <button
                     onClick={() => {
                       setEvents([]);
-                      skipEventsUntilRef.current = Date.now() + 2000; // BUGFIX: pause for 2s using ref (avoids stale closure)
+                      if (setExternalEvents) setExternalEvents([]); // BUGFIX: clear BOTH local and parent state
+                      skipEventsUntilRef.current = Date.now() + 2000;
                     }}
                     style={{
                       padding: '4px 12px',
@@ -282,6 +283,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
                 events.map((ev, i) => {
                   const m = eventMeta(ev);
                   const isNew = i === 0 && events.length > 1; // Basic trigger for scanline
+                  const uniqueKey = `${ev._ts || Date.now()}_${i}`; // BUGFIX: unique key prevents overlapping events
 
                   let labelCol = 'var(--text-secondary)';
                   let iconCol = 'var(--cyan)';
@@ -294,7 +296,7 @@ const Dashboard = ({ events: externalEvents, setEvents: setExternalEvents }) => 
                   }
 
                   return (
-                    <div key={ev._ts || i} className={`event-item ${m.isAnomaly ? 'anomaly' : ''}`}>
+                    <div key={uniqueKey} className={`event-item ${m.isAnomaly ? 'anomaly' : ''}`}>
                       {isNew && <div className="scan-line" />}
                       <span className="event-time">{fmtTime(ev._ts || Date.now())}</span>
                       <span className="event-arrow" style={{ color: iconCol }}>{'>'}</span>
