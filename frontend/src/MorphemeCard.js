@@ -227,6 +227,7 @@ const MorphemeCard = ({ morpheme, isNew, onVerify }) => {
                 </>
               )}
             </button>
+          )}
         </div>
       )}
 

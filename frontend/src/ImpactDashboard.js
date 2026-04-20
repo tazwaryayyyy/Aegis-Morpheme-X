@@ -125,16 +125,18 @@ const ImpactDashboard = ({ events, stakes }) => {
         setIsGenerating(false);
         setTimeout(() => setPdfError(null), 4000);
       }
+    }, 500);
+  };
 
-      const cards = [
-        { label: 'DECISIONS_VERIFIED', value: stats.decisionsVerified, sub: 'Sealed Decisions', color: 'var(--cyan)' },
-        { label: 'ANOMALIES_BLOCKED', value: stats.anomaliesBlocked, sub: 'Sentinel Intercepts', color: 'var(--orange)' },
-        { label: 'PAYOUTS_TRIGGERED', value: stats.payoutsTriggered, sub: 'Parametric Disbursals', color: 'var(--acid)' },
-        { label: 'AGENTS_ACTIVE', value: stats.agentsActive, sub: 'Network Nodes Status', color: 'var(--cyan)' },
-      ];
+  const cards = [
+    { label: 'DECISIONS_VERIFIED', value: stats.decisionsVerified, sub: 'Sealed Decisions', color: 'var(--cyan)' },
+    { label: 'ANOMALIES_BLOCKED', value: stats.anomaliesBlocked, sub: 'Sentinel Intercepts', color: 'var(--orange)' },
+    { label: 'PAYOUTS_TRIGGERED', value: stats.payoutsTriggered, sub: 'Parametric Disbursals', color: 'var(--acid)' },
+    { label: 'AGENTS_ACTIVE', value: stats.agentsActive, sub: 'Network Nodes Status', color: 'var(--cyan)' },
+  ];
 
-      return (
-        <div style={{ marginBottom: '24px' }}>
+  return (
+    <div style={{ marginBottom: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', gap: '12px', alignItems: 'center' }}>
         {pdfError && (
           <div style={{
@@ -150,70 +152,71 @@ const ImpactDashboard = ({ events, stakes }) => {
             [!] {pdfError}
           </div>
         )}
-              disabled={isGenerating}
-              style={{
-                background: isGenerating ? 'rgba(0, 229, 255, 0.05)' : 'rgba(0, 229, 255, 0.1)',
-                border: '1px solid var(--cyan)',
-                color: '#fff',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
-                letterSpacing: '0.1em',
-                cursor: isGenerating ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-                opacity: isGenerating ? 0.6 : 1,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              onMouseEnter={(e) => !isGenerating && (e.currentTarget.style.background = 'rgba(0, 229, 255, 0.2)')}
-              onMouseLeave={(e) => !isGenerating && (e.currentTarget.style.background = 'rgba(0, 229, 255, 0.1)')}
-            >
-              {isGenerating ? (
-                <>
-                  <span className="animate-pulse">GENERATING...</span>
-                </>
-              ) : (
-                <>
-                  <span>EXPORT COMPLIANCE REPORT</span>
-                  <span style={{ fontSize: '12px' }}>↓</span>
-                </>
-              )}
-            </button>
-          </div>
+        <button
+          onClick={generatePDF}
+          disabled={isGenerating}
+          style={{
+            background: isGenerating ? 'rgba(0, 229, 255, 0.05)' : 'rgba(0, 229, 255, 0.1)',
+            border: '1px solid var(--cyan)',
+            color: '#fff',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: '0.1em',
+            cursor: isGenerating ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+            opacity: isGenerating ? 0.6 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+          onMouseEnter={(e) => !isGenerating && (e.currentTarget.style.background = 'rgba(0, 229, 255, 0.2)')}
+          onMouseLeave={(e) => !isGenerating && (e.currentTarget.style.background = 'rgba(0, 229, 255, 0.1)')}
+        >
+          {isGenerating ? (
+            <>
+              <span className="animate-pulse">GENERATING...</span>
+            </>
+          ) : (
+            <>
+              <span>EXPORT COMPLIANCE REPORT</span>
+              <span style={{ fontSize: '12px' }}>↓</span>
+            </>
+          )}
+        </button>
+      </div>
 
-          <div className="stats-row" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
-            gap: '12px',
+      <div className="stats-row" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '12px',
+      }}>
+        {cards.map((card, i) => (
+          <div key={i} className="stat-card" style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '4px',
+            padding: '16px',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            transition: 'transform 0.2s ease',
           }}>
-            {cards.map((card, i) => (
-              <div key={i} className="stat-card" style={{
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '4px',
-                padding: '16px',
-                backdropFilter: 'blur(8px)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                transition: 'transform 0.2s ease',
-              }}>
-                <div style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: '8px' }}>
-                  {card.label}
-                </div>
-                <div style={{ fontSize: '28px', fontFamily: 'var(--font-display)', color: card.color, marginBottom: '2px' }}>
-                  {card.value}
-                </div>
-                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-mono)' }}>
-                  {card.sub}
-                </div>
-              </div>
-            ))}
+            <div style={{ fontSize: '9px', fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.1em', marginBottom: '8px' }}>
+              {card.label}
+            </div>
+            <div style={{ fontSize: '28px', fontFamily: 'var(--font-display)', color: card.color, marginBottom: '2px' }}>
+              {card.value}
+            </div>
+            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-mono)' }}>
+              {card.sub}
+            </div>
           </div>
-        </div >
-      );
-    };
-
+        ))}
+      </div>
+    </div >
+  );
+};
 export default ImpactDashboard;
